@@ -1,0 +1,252 @@
+#!/usr/bin/env python3
+
+import gi
+import subprocess
+import os
+
+gi.require_version("Gtk", "4.0")
+from gi.repository import Gtk, Gio, GLib, Gdk
+
+
+class ScreenshotApp(Gtk.ApplicationWindow):
+    def __init__(self, app):
+        super().__init__(
+            application=app,
+            title="Hyprshot",
+            default_height=150,
+        )
+
+        self.delay_seconds = 0  # Default delay
+        self.output_folder = os.path.expanduser("~/Pictures")  # Default folder
+
+        # Load inline CSS
+        self.load_css()
+
+        # Main Layout
+        vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
+        vbox.set_margin_top(20)
+        vbox.set_margin_bottom(20)
+        vbox.set_margin_start(20)
+        vbox.set_margin_end(20)
+        self.set_child(vbox)
+
+        # Screenshot Buttons Row
+        button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        button_box.set_homogeneous(True)
+
+        btn_workspace = self.create_icon_button(
+            "preferences-desktop-display",
+            "Workspace",
+            self.take_workspace_screenshot,
+        )
+        btn_window = self.create_icon_button(
+            "tablet-symbolic", "Window", self.take_window_screenshot
+        )
+        btn_region = self.create_icon_button(
+            "input-mouse-symbolic",
+            "Selection",
+            self.take_region_screenshot,
+        )
+
+        button_box.append(btn_workspace)
+        button_box.append(btn_window)
+        button_box.append(btn_region)
+
+        vbox.append(button_box)
+
+        # Toggle switch for clipboard mode
+        self.clipboard_toggle = Gtk.Switch()
+        self.clipboard_toggle.set_active(False)  # Default: Off
+        toggle_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        toggle_label = Gtk.Label(label="Clipboard Only:")
+        toggle_label.set_halign(Gtk.Align.START)  # Align label to left
+        toggle_box.append(toggle_label)
+        toggle_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        toggle_box.append(self.clipboard_toggle)
+
+        # Delay Selection Box
+        delay_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        delay_label = Gtk.Label(label="Delay in Seconds:")
+        delay_label.set_halign(Gtk.Align.START)  # Align label to left
+
+        self.delay_spinner = Gtk.SpinButton()
+        adjustment = Gtk.Adjustment(
+            value=0,
+            lower=0,
+            upper=60,
+            step_increment=1,
+            page_increment=5,
+            page_size=0,
+        )
+        self.delay_spinner.set_adjustment(adjustment)
+        self.delay_spinner.set_value(self.delay_seconds)
+        self.delay_spinner.connect("value-changed", self.on_delay_changed)
+
+        delay_box.append(delay_label)
+        delay_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        delay_box.append(self.delay_spinner)
+
+        # Folder Selection Box
+        folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        folder_label = Gtk.Label(label="Save to:")
+        folder_label.set_halign(Gtk.Align.START)  # Align label to left
+
+        self.folder_button = Gtk.Button(label="Select Folder")
+        self.folder_button.connect("clicked", self.select_custom_folder)
+
+        folder_box.append(folder_label)
+        folder_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        folder_box.append(self.folder_button)
+
+        # Create a frame to wrap options
+        options_frame = Gtk.Frame()
+        options_frame.set_css_classes(
+            ["options-box"]
+        )  # Add CSS class for styling
+
+        options_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        options_box.set_margin_top(5)
+        options_box.set_margin_bottom(5)
+        options_box.set_margin_start(5)
+        options_box.set_margin_end(5)
+
+        # Add elements to the options box
+        options_box.append(toggle_box)
+        options_box.append(delay_box)
+        options_box.append(folder_box)
+
+        # Add options box inside the frame
+        options_frame.set_child(options_box)
+        vbox.append(options_frame)
+
+    def create_icon_button(self, icon_name, label_text, callback):
+        """Creates a button with an icon and fixed size."""
+        button = Gtk.Button()
+
+        # Create Icon
+        icon = Gtk.Image.new_from_icon_name(icon_name)
+        icon.set_pixel_size(24)  # Set the icon size in pixels
+        icon.set_halign(Gtk.Align.CENTER)
+        icon.set_valign(Gtk.Align.CENTER)
+        icon.set_margin_bottom(10)
+
+        # Create Label
+        label = Gtk.Label(label=label_text)
+        label.set_halign(Gtk.Align.CENTER)
+
+        # Create Vertical Box to stack icon and text
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.set_halign(Gtk.Align.CENTER)
+        box.set_valign(Gtk.Align.CENTER)
+
+        box.append(icon)
+        box.append(label)
+
+        button.set_child(box)
+
+        button.set_css_classes(["screenshot-button"])  # Add styling
+        button.set_size_request(80, 80)  # Set fixed width and height
+        button.connect("clicked", callback)
+
+        return button
+
+    def on_delay_changed(self, spinner):
+        """Updates delay_seconds when the spin button value changes."""
+        self.delay_seconds = int(spinner.get_value())
+
+    def select_custom_folder(self, button):
+        dialog = Gtk.FileDialog()
+        dialog.set_title("Select a Folder")
+        dialog.set_modal(True)
+
+        def on_response(dialog, result):
+            try:
+                folder = dialog.select_folder_finish(result)
+                if folder:
+                    self.output_folder = folder.get_path()
+            except Exception as e:
+                if "Dismissed by user" not in str(e):
+                    print(f"Error: {e}")
+
+        dialog.select_folder(self, None, on_response)
+
+    def take_workspace_screenshot(self, button):
+        self.run_screenshot(["hyprshot", "-m", "output"])
+
+    def take_window_screenshot(self, button):
+        self.run_screenshot(["hyprshot", "-m", "window"])
+
+    def take_region_screenshot(self, button):
+        self.run_screenshot(["hyprshot", "-m", "region"])
+
+    def run_screenshot(self, cmd):
+        """Runs the screenshot command asynchronously with delay."""
+        if self.clipboard_toggle.get_active():
+            cmd.append("--clipboard-only")
+
+        # Add output folder option
+        cmd.extend(["--output-folder", self.output_folder])
+
+        if self.delay_seconds > 0:
+            GLib.timeout_add_seconds(
+                self.delay_seconds, self.execute_screenshot, cmd
+            )
+        else:
+            self.execute_screenshot(cmd)
+
+    def execute_screenshot(self, cmd):
+        """Executes the screenshot command and schedules exit."""
+
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        )
+
+        GLib.timeout_add(100, self.check_process_exit, process)
+        return False
+
+    def check_process_exit(self, process):
+        """Checks if the screenshot process is done and exits the app."""
+
+        if process.poll() is not None:  # Process has finished
+            self.destroy()  # Close the window
+            app = self.get_application()
+            if app:
+                app.quit()  # Quit safely
+            return False  # Stop timeout checking
+
+        return True  # Keep checking
+
+    def load_css(self):
+        """Loads inline CSS for styling."""
+        css = """
+        .options-box {
+            border: 2px solid #888;
+            border-radius: 10px;
+            padding: 10px;
+        }
+        """
+        provider = Gtk.CssProvider()
+        provider.load_from_data(css.encode("utf-8"))
+
+        Gtk.StyleContext.add_provider_for_display(
+            Gdk.Display.get_default(),
+            provider,
+            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+        )
+
+
+class ScreenshotAppMain(Gtk.Application):
+    def __init__(self):
+        super().__init__()
+
+    def do_activate(self):
+        win = ScreenshotApp(self)
+        win.present()
+
+
+if __name__ == "__main__":
+    try:
+        app = ScreenshotAppMain()
+        app.run()
+    except KeyboardInterrupt:
+        print("Application stopped manually.")

@@ -9,17 +9,23 @@ fi
 # Install dependencies
 sudo pacman -S --needed base-devel git gtk4 python-gobject
 
-# Clone the AUR repository
-git clone https://aur.archlinux.org/hyprshot.git ~/hyprshot
-cd ~/hyprshot || exit
+# Check if hyprshot is already installed
+if ! command -v hyprshot &> /dev/null; then
+    # Clone the AUR repository
+    git clone https://aur.archlinux.org/hyprshot.git ~/hyprshot
+    cd ~/hyprshot || exit
 
-# Build and install the package
-makepkg -si
+    # Build and install the package
+    makepkg -si
 
-# Clean up (optional)
-cd ..
-rm -rf ~/hyprshot
+    # Clean up (optional)
+    cd ..
+    rm -rf ~/hyprshot
+else
+    echo "Hyprshot is already installed, skipping build."
+fi
 
+# Ensure hyprshot-gui is copied
 sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
 
 echo "Hyprshot installation completed."

@@ -16,6 +16,10 @@ class ScreenshotApp(Gtk.ApplicationWindow):
             default_height=150,
         )
 
+        key_controller = Gtk.EventControllerKey()
+        key_controller.connect("key-pressed", self.on_key_press)
+        self.add_controller(key_controller)
+
         self.delay_seconds = 0  # Default delay
         self.output_folder = os.path.expanduser("~/Pictures")  # Default folder
 
@@ -215,6 +219,11 @@ class ScreenshotApp(Gtk.ApplicationWindow):
             return False  # Stop timeout checking
 
         return True  # Keep checking
+
+    def on_key_press(self, controller, keyval, keycode, state):
+        """Close app when Escape key is pressed."""
+        if keyval == Gdk.KEY_Escape:
+            self.close()  # Closes the window
 
     def load_css(self):
         """Loads inline CSS for styling."""

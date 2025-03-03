@@ -26,6 +26,12 @@ git clone https://github.com/s-adi-dev/hyprshot-gui.git
 cd hyprshot-gui
 ./install.sh
 ```
+---
+**Note**:- The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory. To do this, run:
+
+```bash
+sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
+```
 
 ## Usage
 Once installed, you can launch the app from your applications menu or via the terminal:

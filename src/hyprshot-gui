@@ -191,6 +191,9 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         # Add output folder option
         cmd.extend(["--output-folder", self.output_folder])
 
+        # Hide the window instead of closing it so users can take the screenshot freely without the apps interference in screenshot
+        self.set_visible(False)
+
         if self.delay_seconds > 0:
             GLib.timeout_add_seconds(
                 self.delay_seconds, self.execute_screenshot, cmd

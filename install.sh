@@ -20,4 +20,6 @@ makepkg -si
 cd ..
 rm -rf ~/hyprshot
 
+sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
+
 echo "Hyprshot installation completed."

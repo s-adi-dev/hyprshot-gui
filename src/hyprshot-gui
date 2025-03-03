@@ -1,11 +1,42 @@
 #!/usr/bin/env python3
 
 import gi
+import sys
 import subprocess
 import os
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gio, GLib, Gdk
+
+VERSION = "1.0.0"  # Define the application version
+
+HELP_TEXT = """Usage: hyprshot-gui [OPTIONS]
+
+Options:
+  -h, --help      Show this help message and exit.
+  -v, --version   Show version information and exit.
+
+Description:
+  Hyprshot GUI is a simple GTK4-based application for taking screenshots, 
+  utilizing Hyprshot under the hood.
+"""
+
+# Check for command-line arguments before launching GUI
+if len(sys.argv) > 1:
+    arg = sys.argv[1]
+
+    if arg in ("-h", "--help"):
+        print(HELP_TEXT)
+        sys.exit(0)
+
+    elif arg in ("-v", "--version"):
+        print(f"Hyprshot GUI {VERSION}")
+        sys.exit(0)
+
+    else:
+        print(f"Unknown option: {arg}")
+        print("Use -h or --help for usage information.")
+        sys.exit(1)
 
 
 class ScreenshotApp(Gtk.ApplicationWindow):

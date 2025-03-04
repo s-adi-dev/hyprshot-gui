@@ -34,7 +34,7 @@ arch() {
     echo "Hyprshot installation completed."
 }
 
-other {
+other() {
 
     if ! command -v hyprshot &> /dev/null; then
         echo "You need to install hyprshot!"

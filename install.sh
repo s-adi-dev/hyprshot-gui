@@ -78,3 +78,4 @@ case "$1" in
     echo "HyprShot GUI install script arguments:"
     echo "arch  -|- used when on Arch Linux"
     echo "other -|- used when on a non Arch Linux system"
+esac

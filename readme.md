@@ -22,9 +22,7 @@ Ensure you have the following dependencies installed before running the applicat
 Run the provided installation script to install all the dependencies and set up the application:
 
 ```bash
-git clone https://github.com/s-adi-dev/hyprshot-gui.git
-cd hyprshot-gui
-./install.sh
+curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh)
 ```
 ---
 **Note**: The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  

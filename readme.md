@@ -7,7 +7,7 @@
 - Uses **Hyprshot** for capturing screenshots
 - Lightweight and fast
 
-## interface Preview
+## Interface Preview
 ![Main Interface](assets/interface.png)
 
 ## Dependencies
@@ -45,9 +45,27 @@ For a better user experience, you can configure Hyprland to launch the applicati
 ```bash
 windowrulev2 = float, title:^(.*Hyprshot.*)$
 ```
+
+#### Command Line Options
+
+| Flag | Alias | Description |
+|------|-------|-------------|
+| `-h` | `--help` | Show help message and exit |
+| `-v` | `--version` | Show version information and exit |
+| `-o <path>` | `--output-folder <path>` | Set directory to save screenshots |
+| `-z` | `--freeze` | Freeze the screen on initialization |
+| `-d <seconds>` | `--delay <seconds>` | Set delay before taking a screenshot |
+| `--clipboard-only` | | Save only to clipboard |
+| `-s` | `--silent` | Do not send notification when a screenshot is saved |
+| `-t <ms>` | `--notify-timeout <ms>` | Set notification timeout in milliseconds |
+
+- Example Usage
+```sh
+hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
+```
 ## Contributing
 If you'd like to contribute, feel free to submit pull requests or report issues.
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](./LICENSE).
 

@@ -2,41 +2,108 @@
 
 import gi
 import sys
+import argparse
 import subprocess
 import os
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gio, GLib, Gdk
 
-VERSION = "1.0.0"  # Define the application version
+VERSION = "1.5.0"
 
 HELP_TEXT = """Usage: hyprshot-gui [OPTIONS]
 
 Options:
-  -h, --help      Show this help message and exit.
-  -v, --version   Show version information and exit.
+  -h, --help                Show this help message and exit.
+  -v, --version             Show version information and exit.
+
+  -o, --output-folder       directory in which to save screenshot 
+  -z, --freeze              freeze the screen on initialization
+  -d, --delay               time delay in taking screenshot
+  --clipboard-only          Save only to clipboard
+
+  -s, --silent              don't send notification when screenshot is saved
+  -t, --notify-timeout       notification timeout in milliseconds
 
 Description:
   Hyprshot GUI is a simple GTK4-based application for taking screenshots, 
   utilizing Hyprshot under the hood.
 """
 
-# Check for command-line arguments before launching GUI
-if len(sys.argv) > 1:
-    arg = sys.argv[1]
 
-    if arg in ("-h", "--help"):
-        print(HELP_TEXT)
-        sys.exit(0)
+# Default values
+OutputDir = os.path.expanduser("~/Pictures")
+Delay = 0
+NotifyTimeout = 5000
+ClipboardOnly = False
+Freeze = False
+Silent = False
 
-    elif arg in ("-v", "--version"):
-        print(f"Hyprshot GUI {VERSION}")
-        sys.exit(0)
 
-    else:
-        print(f"Unknown option: {arg}")
-        print("Use -h or --help for usage information.")
-        sys.exit(1)
+# Types
+def check_positive_int(value):
+    try:
+        ivalue = int(value)
+        if ivalue < 0:
+            raise argparse.ArgumentTypeError(
+                "Delay must be a non-negative integer."
+            )
+        return ivalue
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"Invalid integer value: '{value}'")
+
+
+# Argument parser
+parser = argparse.ArgumentParser(
+    description="Hyprshot GUI - Simple Screenshot Tool",
+    allow_abbrev=False,
+    add_help=False,
+)
+
+parser.add_argument("-o", "--output-folder", type=str)
+
+parser.add_argument("-d", "--delay", type=check_positive_int)
+
+parser.add_argument("-t", "--notify-timeout", type=check_positive_int)
+
+parser.add_argument("--clipboard-only", action="store_true")
+
+parser.add_argument("-z", "--freeze", action="store_true")
+
+parser.add_argument("-s", "--silent", action="store_true")
+
+parser.add_argument("-v", "--version", action="store_true")
+
+parser.add_argument("-h", "--help", action="store_true")
+
+args = parser.parse_args()
+
+if args.help:
+    print(HELP_TEXT)
+    sys.exit(0)
+
+
+if args.version:
+    print(f"Hyprshot GUI {VERSION}")
+    sys.exit(0)
+
+if args.output_folder:
+    OutputDir = os.path.expanduser(args.output_folder)  # Expand tilde (~)
+
+if args.delay is not None:
+    Delay = args.delay
+
+if args.notify_timeout is not None:
+    NotifyTimeout = args.notify_timeout
+
+if args.silent:
+    Silent = True
+
+if args.freeze:
+    Freeze = True
+
+if args.clipboard_only:
+    ClipboardOnly = True
 
 
 class ScreenshotApp(Gtk.ApplicationWindow):
@@ -51,8 +118,8 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         key_controller.connect("key-pressed", self.on_key_press)
         self.add_controller(key_controller)
 
-        self.delay_seconds = 0  # Default delay
-        self.output_folder = os.path.expanduser("~/Pictures")  # Default folder
+        self.delay_seconds = Delay  # Default delay
+        self.output_folder = os.path.expanduser(OutputDir)  # Default folder
 
         # Load inline CSS
         self.load_css()
@@ -91,7 +158,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
 
         # Toggle switch for clipboard mode
         self.clipboard_toggle = Gtk.Switch()
-        self.clipboard_toggle.set_active(False)  # Default: Off
+        self.clipboard_toggle.set_active(ClipboardOnly)  # Default: Off
         toggle_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         toggle_label = Gtk.Label(label="Clipboard Only:")
         toggle_label.set_halign(Gtk.Align.START)  # Align label to left
@@ -106,7 +173,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
 
         self.delay_spinner = Gtk.SpinButton()
         adjustment = Gtk.Adjustment(
-            value=0,
+            value=Delay,
             lower=0,
             upper=60,
             step_increment=1,
@@ -218,6 +285,15 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         """Runs the screenshot command asynchronously with delay."""
         if self.clipboard_toggle.get_active():
             cmd.append("--clipboard-only")
+
+        if Freeze:
+            cmd.append("--freeze")
+
+        if Silent:
+            cmd.append("--silent")
+
+        if NotifyTimeout is not None and NotifyTimeout > 0:
+            cmd.append(f"-t {NotifyTimeout}")
 
         # Add output folder option
         cmd.extend(["--output-folder", self.output_folder])

@@ -19,13 +19,13 @@ Ensure you have the following dependencies installed before running the applicat
 - **Hyprshot**
 
 ## Installation
-Run the provided installation script to install all the dependencies and set up the application:
+**On Arch Linux** run the provided installation script to install all the dependencies and set up the application:
 
 ```bash
 curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh)
 ```
 ---
-**Note**: The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  
+If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  
 
 Additionally, to integrate **Hyprshot** into your system’s application menu (so it appears in app launchers like `rofi`, `wofi`, or `dmenu`), you need to place the `.desktop` file in `/usr/share/applications/`.  
 
@@ -49,6 +49,8 @@ For a better user experience, you can configure Hyprland to launch the applicati
 windowrulev2 = float, title:^(.*Hyprshot.*)$
 ```
 
+**NOTE**: For users of the install script it gets put at the bottom of the hyprland.conf file!
+
 #### Command Line Options
 
 | Flag | Alias | Description |
@@ -62,7 +64,7 @@ windowrulev2 = float, title:^(.*Hyprshot.*)$
 | `-s` | `--silent` | Do not send notification when a screenshot is saved |
 | `-t <ms>` | `--notify-timeout <ms>` | Set notification timeout in milliseconds |
 
-- Example Usage
+- Example `CLI` Usage
 ```sh
 hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
 ```

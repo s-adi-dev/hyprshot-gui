@@ -3,7 +3,7 @@
 <p>A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b> under the hood. The design is inspired by <b>GNOME Screenshot</b>.</p>
 
 ## Features
-- Easy-to-use GTK4 interface
+- Sleek easy-to-use GTK4 interface
 - Uses **Hyprshot** for capturing screenshots
 - Lightweight and fast
 

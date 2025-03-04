@@ -27,5 +27,6 @@ fi
 
 # Ensure hyprshot-gui is copied
 sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
+sudo cp ./src/hyprshot.desktop /usr/share/applications/hyprshot.desktop
 
 echo "Hyprshot installation completed."

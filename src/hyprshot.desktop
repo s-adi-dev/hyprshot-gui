@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Hyprshot
+Comment=GTK4-based screenshot tool using Hyprshot
+Exec=/usr/bin/hyprshot-gui
+Icon=camera-photo
+Terminal=false
+Type=Application
+Categories=Utility;Graphics;
+StartupNotify=true

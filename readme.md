@@ -27,10 +27,15 @@ cd hyprshot-gui
 ./install.sh
 ```
 ---
-**Note**:- The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory. To do this, run:
+**Note**: The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  
+
+Additionally, to integrate **Hyprshot** into your system’s application menu (so it appears in app launchers like `rofi`, `wofi`, or `dmenu`), you need to place the `.desktop` file in `/usr/share/applications/`.  
+
+To do this, run:  
 
 ```bash
 sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
+sudo cp ./src/hyprshot.desktop /usr/share/applications/hyprshot.desktop
 ```
 
 ## Usage

@@ -1,55 +1,57 @@
-<h1 align="center">Hyprshot GUI</h1>
+<h1 align="center">HyprShot GUI</h1>
 
-<p>A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b> under the hood. The design is inspired by <b>GNOME Screenshot</b>.</p>
+A simple GTK4-based application for taking screenshots, utilizing **HyprShot** under the hood. The design is inspired by **GNOME Screenshot**.
 
 ## Features
-- Easy-to-use GTK4 interface
-- Uses **Hyprshot** for capturing screenshots
+- Sleek easy-to-use GTK4 interface
+- Uses **HyprShot** for capturing screenshots
 - Lightweight and fast
 
 ## Interface Preview
 ![Main Interface](assets/interface.png)
 
-## Dependencies
-Ensure you have the following dependencies installed before running the application:
+## Installation
+**On Arch Linux** run this command to run the install script:
 
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s arch`
+
+---
+
+**If you are not on arch install these dependencies**
+
+### Dependencies
 - **Python 3** (minimum required version)
 - **python-gobject**
 - **GTK4**
-- **Hyprshot**
+- **HyprShot**
 
-## Installation
-Run the provided installation script to install all the dependencies and set up the application:
-
-```bash
-git clone https://github.com/s-adi-dev/hyprshot-gui.git
-cd hyprshot-gui
-./install.sh
-```
----
-**Note**: The install script is only for **Arch Linux** users. If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  
-
-Additionally, to integrate **Hyprshot** into your system’s application menu (so it appears in app launchers like `rofi`, `wofi`, or `dmenu`), you need to place the `.desktop` file in `/usr/share/applications/`.  
-
-To do this, run:  
-
-```bash
-sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
-sudo cp ./src/hyprshot.desktop /usr/share/applications/hyprshot.desktop
-```
+Then run this command
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s other`
 
 ## Usage
-Once installed, you can launch the app from your applications menu or via the terminal:
+Once installed, you can launch the app from your applications menu (r/t/wofi, walker, nwg-menu, bemenu, fuzzel, anyrun, ...) or via the terminal:
 
-```bash
+```
 hyprshot-gui
 ```
 
-## Additional Configuration
-For a better user experience, you can configure Hyprland to launch the application in floating mode by adding the following window rule to your Hyprland configuration:
-```bash
-windowrulev2 = float, title:^(.*Hyprshot.*)$
-```
+## Configurations
+HyprShot GUI provides two ways to configure its behavior: **configuration file** and **command-line flags**.
+The configuration file is generated with the install script at `~/.config/hypr/hyprshot.conf`
+
+#### Available Settings
+| Setting        | Type    | Description                                      | Default Value  |
+|----------------|---------|--------------------------------------------------|----------------|
+| `OutputDir`    | String  | Directory where screenshots are saved            | `~/Pictures`   |
+| `Delay`        | Integer | Delay before taking a screenshot (in seconds)    | `0`            |
+| `NotifyTimeout`| Integer | Notification timeout duration (in milliseconds)  | `5000`         |
+| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `false`        |
+| `Freeze`       | Boolean | Freeze the screen on initialization              | `false`        |
+| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `false`        |
+
+#### Notes:
+- `Boolean` values accept `true`, `false`, `yes`, `no`, `1`, or `0`.
+- `OutputDir` supports `~` expansion.
 
 #### Command Line Options
 
@@ -64,8 +66,8 @@ windowrulev2 = float, title:^(.*Hyprshot.*)$
 | `-s` | `--silent` | Do not send notification when a screenshot is saved |
 | `-t <ms>` | `--notify-timeout <ms>` | Set notification timeout in milliseconds |
 
-- Example Usage
-```sh
+- Example `CLI` Usage
+```
 hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
 ```
 ## Contributing

@@ -5,6 +5,8 @@ import sys
 import argparse
 import subprocess
 import os
+import configparser
+from pathlib import Path
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, Gio, GLib, Gdk
@@ -26,18 +28,88 @@ Options:
   -t, --notify-timeout       notification timeout in milliseconds
 
 Description:
-  Hyprshot GUI is a simple GTK4-based application for taking screenshots, 
+  HyprShot GUI is a simple GTK4-based application for taking screenshots, 
   utilizing Hyprshot under the hood.
 """
 
 
-# Default values
-OutputDir = os.path.expanduser("~/Pictures")
-Delay = 0
-NotifyTimeout = 5000
-ClipboardOnly = False
-Freeze = False
-Silent = False
+CONFIG_PATH = os.path.expanduser("~/.config/hypr/hyprshot.conf")
+
+
+def load_config():
+    """Loads config with validation and default fallbacks."""
+    config = configparser.ConfigParser()
+
+    # Default values
+    default_settings = {
+        "OutputDir": os.path.expanduser("~/Pictures"),
+        "Delay": "0",
+        "NotifyTimeout": "5000",
+        "ClipboardOnly": "false",
+        "Freeze": "false",
+        "Silent": "false",
+    }
+
+    # Create config file if it doesn't exist
+    if not os.path.exists(CONFIG_PATH):
+        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=true)
+        config["Settings"] = default_settings
+        with open(CONFIG_PATH, "w") as config_file:
+            config.write(config_file)
+
+    # Read existing config
+    config.read(CONFIG_PATH)
+    settings = config["Settings"]
+
+    # Validate and apply defaults if needed
+    validated_settings = {
+        "OutputDir": os.path.expanduser(
+            settings.get("OutputDir", default_settings["OutputDir"])
+        ),
+        "Delay": validate_int(
+            settings.get("Delay", default_settings["Delay"]), 0
+        ),
+        "NotifyTimeout": validate_int(
+            settings.get("NotifyTimeout", default_settings["NotifyTimeout"]),
+            5000,
+        ),
+        "ClipboardOnly": validate_bool(
+            settings.get("ClipboardOnly", default_settings["ClipboardOnly"])
+        ),
+        "Freeze": validate_bool(
+            settings.get("Freeze", default_settings["Freeze"])
+        ),
+        "Silent": validate_bool(
+            settings.get("Silent", default_settings["Silent"])
+        ),
+    }
+
+    return validated_settings
+
+
+def validate_int(value, default):
+    """Ensures value is a valid integer, otherwise returns default."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
+def validate_bool(value):
+    """Ensures value is a valid boolean."""
+    return str(value).strip().lower() in ["true", "1", "yes"]
+
+
+# Load configuration at startup with validation
+config = load_config()
+
+# Application variables
+OutputDir = config["OutputDir"]
+Delay = config["Delay"]
+NotifyTimeout = config["NotifyTimeout"]
+ClipboardOnly = config["ClipboardOnly"]
+Freeze = config["Freeze"]
+Silent = config["Silent"]
 
 
 # Types
@@ -55,9 +127,9 @@ def check_positive_int(value):
 
 # Argument parser
 parser = argparse.ArgumentParser(
-    description="Hyprshot GUI - Simple Screenshot Tool",
-    allow_abbrev=False,
-    add_help=False,
+    description="HyprShot GUI - Simple Screenshot Tool",
+    allow_abbrev=false,
+    add_help=false,
 )
 
 parser.add_argument("-o", "--output-folder", type=str)
@@ -84,7 +156,7 @@ if args.help:
 
 
 if args.version:
-    print(f"Hyprshot GUI {VERSION}")
+    print(f"HyprShot GUI {VERSION}")
     sys.exit(0)
 
 if args.output_folder:
@@ -97,13 +169,13 @@ if args.notify_timeout is not None:
     NotifyTimeout = args.notify_timeout
 
 if args.silent:
-    Silent = True
+    Silent = true
 
 if args.freeze:
-    Freeze = True
+    Freeze = true
 
 if args.clipboard_only:
-    ClipboardOnly = True
+    ClipboardOnly = true
 
 
 class ScreenshotApp(Gtk.ApplicationWindow):
@@ -134,7 +206,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
 
         # Screenshot Buttons Row
         button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        button_box.set_homogeneous(True)
+        button_box.set_homogeneous(true)
 
         btn_workspace = self.create_icon_button(
             "preferences-desktop-display",
@@ -163,7 +235,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         toggle_label = Gtk.Label(label="Clipboard Only:")
         toggle_label.set_halign(Gtk.Align.START)  # Align label to left
         toggle_box.append(toggle_label)
-        toggle_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        toggle_box.append(Gtk.Box(hexpand=true))  # Spacer for right alignment
         toggle_box.append(self.clipboard_toggle)
 
         # Delay Selection Box
@@ -185,7 +257,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         self.delay_spinner.connect("value-changed", self.on_delay_changed)
 
         delay_box.append(delay_label)
-        delay_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        delay_box.append(Gtk.Box(hexpand=true))  # Spacer for right alignment
         delay_box.append(self.delay_spinner)
 
         # Folder Selection Box
@@ -193,12 +265,27 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         folder_label = Gtk.Label(label="Save to:")
         folder_label.set_halign(Gtk.Align.START)  # Align label to left
 
-        self.folder_button = Gtk.Button(label="Select Folder")
+        # Display current folder path
+        self.folder_path_label = Gtk.Label(
+            label=self.truncate_path(self.output_folder)
+        )
+        self.folder_path_label.set_ellipsize(true)
+        self.folder_path_label.set_tooltip_text(self.output_folder)
+        self.folder_path_label.set_halign(Gtk.Align.START)
+        self.folder_path_label.set_hexpand(true)
+
+        self.folder_button = Gtk.Button.new_from_icon_name("folder-symbolic")
+        self.folder_button.set_tooltip_text("Select Folder")
         self.folder_button.connect("clicked", self.select_custom_folder)
 
+        folder_path_box = Gtk.Box(
+            orientation=Gtk.Orientation.HORIZONTAL, spacing=5
+        )
+        folder_path_box.append(self.folder_path_label)
+        folder_path_box.append(self.folder_button)
+
         folder_box.append(folder_label)
-        folder_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
-        folder_box.append(self.folder_button)
+        folder_box.append(folder_path_box)
 
         # Create a frame to wrap options
         options_frame = Gtk.Frame()
@@ -256,19 +343,49 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         """Updates delay_seconds when the spin button value changes."""
         self.delay_seconds = int(spinner.get_value())
 
+    def truncate_path(self, path, max_length=15):
+        """Truncate path to a reasonable length for display"""
+        path_obj = Path(path)
+        if len(str(path)) <= max_length:
+            return str(path)
+        return f"...{str(path_obj)[-max_length:]}"
+
     def select_custom_folder(self, button):
         dialog = Gtk.FileDialog()
         dialog.set_title("Select a Folder")
-        dialog.set_modal(True)
+        dialog.set_modal(true)
 
         def on_response(dialog, result):
+
+            errorDialog = Gtk.AlertDialog()
             try:
                 folder = dialog.select_folder_finish(result)
                 if folder:
-                    self.output_folder = folder.get_path()
+                    new_folder = folder.get_path()
+                    # Check if folder is writable
+                    if os.access(new_folder, os.W_OK):
+                        self.output_folder = new_folder
+                        self.folder_path_label.set_text(
+                            self.truncate_path(self.output_folder)
+                        )
+                        self.folder_path_label.set_tooltip_text(
+                            self.output_folder
+                        )
+                    else:
+
+                        errorDialog.set_message("Permission Error")
+                        errorDialog.set_detail(
+                            f"Selected folder is not writable: {new_folder}"
+                        )
+                        errorDialog.set_modal(true)
+                        errorDialog.show(self)
+
             except Exception as e:
                 if "Dismissed by user" not in str(e):
-                    print(f"Error: {e}")
+                    errorDialog.set_message("Folder Selection Error")
+                    errorDialog.set_detail(f"Error selecting folder: {str(e)}")
+                    errorDialog.set_modal(true)
+                    errorDialog.show(self)
 
         dialog.select_folder(self, None, on_response)
 
@@ -299,7 +416,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         cmd.extend(["--output-folder", self.output_folder])
 
         # Hide the window instead of closing it so users can take the screenshot freely without the apps interference in screenshot
-        self.set_visible(False)
+        self.set_visible(false)
 
         if self.delay_seconds > 0:
             GLib.timeout_add_seconds(
@@ -316,7 +433,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         )
 
         GLib.timeout_add(100, self.check_process_exit, process)
-        return False
+        return false
 
     def check_process_exit(self, process):
         """Checks if the screenshot process is done and exits the app."""
@@ -326,9 +443,9 @@ class ScreenshotApp(Gtk.ApplicationWindow):
             app = self.get_application()
             if app:
                 app.quit()  # Quit safely
-            return False  # Stop timeout checking
+            return false  # Stop timeout checking
 
-        return True  # Keep checking
+        return true  # Keep checking
 
     def on_key_press(self, controller, keyval, keycode, state):
         """Close app when Escape key is pressed."""

@@ -13,7 +13,7 @@ A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b
 ## Installation
 **On Arch Linux** run this command to run the install script:
 
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh)`
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s a)`
 
 ---
 
@@ -26,6 +26,7 @@ A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b
 - **Hyprshot**
 
 Then run this command
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s o`
 
 ## Usage
 Once installed, you can launch the app from your applications menu or via the terminal:

@@ -2,7 +2,7 @@
 
 # Ensure script is run as a normal user, not root
 if [[ $EUID -eq 0 ]]; then
-    echo "Please do not run this script as root."
+    echo "DONT run this script as root!"
     exit 1
 fi
 
@@ -19,14 +19,14 @@ if ! command -v hyprshot &> /dev/null; then
     makepkg -si
 
     # Clean up (optional)
-    cd ..
+    cd .. || exit
     rm -rf ~/hyprshot
 else
     echo "Hyprshot is already installed, skipping build."
 fi
 
 # Ensure hyprshot-gui is copied
-sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
-sudo cp ./src/hyprshot.desktop /usr/share/applications/hyprshot.desktop
+sudo curl -Lo /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
+sudo curl -Lo /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
 
 echo "Hyprshot installation completed."

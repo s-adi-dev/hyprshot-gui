@@ -10,30 +10,22 @@ A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b
 ## Interface Preview
 ![Main Interface](assets/interface.png)
 
-## Dependencies
-Ensure you have the following dependencies installed before running the application:
+## Installation
+**On Arch Linux** run this command to run the install script:
 
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh)`
+
+---
+
+**If you are not on arch install these dependencies**
+
+### Dependencies
 - **Python 3** (minimum required version)
 - **python-gobject**
 - **GTK4**
 - **Hyprshot**
 
-## Installation
-**On Arch Linux** run the provided installation script to install all the dependencies and set up the application:
-
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh)`
-
----
-If you are using a different distribution, you need to manually install the required dependencies. After installing the dependencies, you must copy or move the `./src/hyprshot-gui` file to the `/usr/bin/` directory so that it can be executed from anywhere in the terminal.  
-
-Additionally, to integrate **Hyprshot** into your system’s application menu (so it appears in app launchers like `rofi`, `wofi`, or `dmenu`), you need to place the `.desktop` file in `/usr/share/applications/`.  
-
-To do this, run:  
-
-```
-sudo cp ./src/hyprshot-gui /usr/bin/hyprshot-gui
-sudo cp ./src/hyprshot.desktop /usr/share/applications/hyprshot.desktop
-```
+Then run this command
 
 ## Usage
 Once installed, you can launch the app from your applications menu or via the terminal:

@@ -67,7 +67,7 @@ other() {
 }
 
 
-case $1 in
+case "$1" in
 "arch")
     arch
     ;;

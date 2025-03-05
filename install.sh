@@ -76,10 +76,18 @@ case "$1" in
     ;;
 *)
     echo "----------------------------------------"
-    read -p "Are you using Arch Linux or not? [Y/n] " arch
-    if "$arch" = "N" || "$arch" == "n"; then
-        arch
-    else
-        other
-    fi
+    while true; do
+        read -p "Are you using Arch Linux or not? [Y/n] " arch
+        case "$arch" in
+        [Nn]) 
+            other
+            ;;
+        [Yy])
+            arch
+            ;;
+        *)
+            echo "You NEED to input either '\033[0;32mY\033[0m', '\033[0;32my\033[0m', '\033[0;31mN\033[0m' or '\033[0;31mn\033[0m'!"
+            ;;
+        esac
+    done
 esac

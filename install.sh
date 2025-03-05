@@ -77,7 +77,7 @@ case "$1" in
 *)
     echo "----------------------------------------"
     while true; do
-        read -r -p "Are you using Arch Linux or not? [y/n] " yes
+        read -r -p "Are you using Arch Linux or not? [y/n] " yes < /dev/tty
         case "$yes" in
         [Nn]) 
             other

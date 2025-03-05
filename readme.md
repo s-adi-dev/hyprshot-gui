@@ -13,7 +13,7 @@ A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b
 ## Installation
 **On Arch Linux** run this command to run the install script:
 
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s "arch")`
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s arch`
 
 ---
 
@@ -26,22 +26,14 @@ A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b
 - **Hyprshot**
 
 Then run this command
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s "other"`
+`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | bash -s other`
 
 ## Usage
-Once installed, you can launch the app from your applications menu or via the terminal:
+Once installed, you can launch the app from your applications menu (r/t/wofi, walker, nwg-menu, bemenu, fuzzel, anyrun, ...) or via the terminal:
 
-```bash
+```
 hyprshot-gui
 ```
-
-## Additional Configuration
-For a better user experience, you can configure Hyprland to launch the application in floating mode by adding the following window rule to your Hyprland configuration:
-```bash
-windowrulev2 = float, title:^(.*Hyprshot.*)$
-```
-
-**NOTE**: For users of the install script it gets put at the bottom of the hyprland.conf file!
 
 #### Command Line Options
 
@@ -57,7 +49,7 @@ windowrulev2 = float, title:^(.*Hyprshot.*)$
 | `-t <ms>` | `--notify-timeout <ms>` | Set notification timeout in milliseconds |
 
 - Example `CLI` Usage
-```sh
+```
 hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
 ```
 ## Contributing

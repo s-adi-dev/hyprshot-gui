@@ -1,6 +1,6 @@
 <h1 align="center">Hyprshot GUI</h1>
 
-A simple GTK4-based application for taking screenshots, utilizing <b>Hyprshot</b> under the hood. The design is inspired by **GNOME Screenshot**.
+A simple GTK4-based application for taking screenshots, utilizing **Hyprshot** under the hood. The design is inspired by **GNOME Screenshot**.
 
 ## Features
 - Sleek easy-to-use GTK4 interface

@@ -75,9 +75,10 @@ case "$1" in
     other
     ;;
 *)
-    echo "----------------------------------------------"
-    echo "HyprShot GUI install script arguments:"
-    echo "arch  -|- used when on Arch Linux"
-    echo "other -|- used when on a non Arch Linux system"
-    echo "----------------------------------------------"
+    read -p "Are you using Arch Linux or not? [Y/n] " arch
+    if $arch = "N" || $arch = "n"; then
+        arch
+    else
+        other
+    fi
 esac

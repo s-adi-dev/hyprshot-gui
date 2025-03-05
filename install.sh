@@ -58,9 +58,9 @@ other() {
     if ! command -v curl &> /dev/null; then
         echo "cURL is not installed using wget!"
         echo "Installing the program..."
-        sudo wget -Pq /usr/bin/ -O hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui > /dev/null
+        sudo wget -qO /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
         echo "Adding the program to the applications list..."
-        sudo wget -Pq /usr/share/applications/ -O hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop > /dev/null   
+        sudo wget -qO /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     else
         echo "Installing the program..."
         sudo curl -os /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui

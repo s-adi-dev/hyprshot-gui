@@ -77,8 +77,8 @@ case "$1" in
 *)
     echo "----------------------------------------"
     while true; do
-        read -p "Are you using Arch Linux or not? [Y/n] " arch
-        case "$arch" in
+        read -p "Are you using Arch Linux or not? [Y/n] " yes
+        case "$yes" in
         [Nn]) 
             other
             ;;
@@ -86,7 +86,7 @@ case "$1" in
             arch
             ;;
         *)
-            echo "You NEED to input either '\033[0;32mY\033[0m', '\033[0;32my\033[0m', '\033[0;31mN\033[0m' or '\033[0;31mn\033[0m'!"
+            echo -e "You NEED to input either '\033[0;32mY\033[0m', '\033[0;32my\033[0m', '\033[0;31mN\033[0m' or '\033[0;31mn\033[0m'!"
             ;;
         esac
     done

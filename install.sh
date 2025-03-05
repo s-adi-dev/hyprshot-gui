@@ -77,7 +77,7 @@ case "$1" in
 *)
     echo "----------------------------------------"
     read -p "Are you using Arch Linux or not? [Y/n] " arch
-    if $arch = "N" || $arch = "n"; then
+    if $arch == "N" || $arch == "n"; then
         arch
     else
         other

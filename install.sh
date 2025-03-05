@@ -27,8 +27,10 @@ arch() {
     fi
 
     # Ensure hyprshot-gui is copied
-    sudo curl -Lo /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-    sudo curl -Lo /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
+    echo "Installing the program..."
+    sudo curl -Lo /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui > /dev/null
+    echo "Adding the program to the applications list..."
+    sudo curl -Lo /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop > /dev/null
 
     echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
     echo "Hyprshot installation completed."
@@ -55,11 +57,15 @@ other() {
     # Check if python is already installed
     if ! command -v curl &> /dev/null; then
         echo "cURL is not installed using wget!"
-        sudo wget -P /usr/bin/ -O hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-        sudo wget -P /usr/share/applications/ -O hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop   
+        echo "Installing the program..."
+        sudo wget -P /usr/bin/ -O hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui > /dev/null
+        echo "Adding the program to the applications list..."
+        sudo wget -P /usr/share/applications/ -O hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop > /dev/null   
     else
-        sudo curl -Lo /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-        sudo curl -Lo /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
+        echo "Installing the program..."
+        sudo curl -Lo /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui > /dev/null
+        echo "Adding the program to the applications list..."
+        sudo curl -Lo /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop > /dev/null
     fi
 
     echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf

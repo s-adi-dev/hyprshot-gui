@@ -98,3 +98,6 @@ case "$1" in
         esac
     done
 esac
+
+echo -e"[Settings]\rOutputDir=\~\/Pictures\rDelay=0\rNotifyTimeout=5000\rClipboardOnly=False\rFreeze=False\rSilent=False
+" >> ~/.config/hyprshot-gui/config

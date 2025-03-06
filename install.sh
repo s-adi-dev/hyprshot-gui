@@ -95,5 +95,5 @@ esac
 
 echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
 echo -e"[Settings]\rOutputDir=\~\/Pictures\rDelay=0\rNotifyTimeout=5000\rClipboardOnly=False\rFreeze=False\rSilent=False
-" >> ~/.config/hypr/hyprshot.conf
+" > ~/.config/hypr/hyprshot.conf
 echo "Hyprshot installation completed."

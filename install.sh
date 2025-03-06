@@ -31,9 +31,6 @@ arch() {
     sudo curl -os /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
     echo "Adding the program to the applications list..."
     sudo curl -os /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
-
-    echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
-    echo "Hyprshot installation completed."
 }
 
 other() {
@@ -67,9 +64,6 @@ other() {
         echo "Adding the program to the applications list..."
         sudo curl -os /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     fi
-
-    echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
-    echo "Hyprshot installation completed."
 }
 
 
@@ -99,5 +93,7 @@ case "$1" in
     done
 esac
 
+echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
 echo -e"[Settings]\rOutputDir=\~\/Pictures\rDelay=0\rNotifyTimeout=5000\rClipboardOnly=False\rFreeze=False\rSilent=False
-" >> ~/.config/hyprshot-gui/config
+" >> ~/.config/hypr/hyprshot.conf
+echo "Hyprshot installation completed."

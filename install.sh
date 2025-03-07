@@ -8,7 +8,8 @@ fi
 
 arch() {
     # Install dependencies
-    sudo pacman -S --needed base-devel git gtk4 python-gobject curl
+    echo "Installing dependencies..."
+    sudo pacman -S --needed base-devel git gtk4 python-gobject curl > /dev/null
 
     # Check if hyprshot is already installed
     if ! command -v hyprshot &> /dev/null; then
@@ -23,7 +24,7 @@ arch() {
         cd .. || exit
         rm -rf ~/hyprshot
     else
-        echo "Hyprshot is already installed, skipping build."
+        echo ""
     fi
 
     # Ensure hyprshot-gui is copied
@@ -93,7 +94,9 @@ case "$1" in
     done
 esac
 
+echo "Making the GUI float..."
 echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
+echo "Creating the config..."
 echo -e"[Settings]\rOutputDir=\~\/Pictures\rDelay=0\rNotifyTimeout=5000\rClipboardOnly=False\rFreeze=False\rSilent=False
 " > ~/.config/hypr/hyprshot.conf
 echo "Hyprshot installation completed."

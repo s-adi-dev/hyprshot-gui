@@ -15,8 +15,6 @@ arch() {
         makepkg -si
         cd .. || exit
         rm -rf ~/hyprshot
-    else
-        echo ""
     fi
 
     echo "Installing HyprShot GUI..."

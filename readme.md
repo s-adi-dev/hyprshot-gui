@@ -1,10 +1,10 @@
-<h1 align="center">Hyprshot GUI</h1>
+<h1 align="center">HyprShot GUI</h1>
 
-A simple GTK4-based application for taking screenshots, utilizing **Hyprshot** under the hood. The design is inspired by **GNOME Screenshot**.
+A simple GTK4-based application for taking screenshots, utilizing **HyprShot** under the hood. The design is inspired by **GNOME Screenshot**.
 
 ## Features
 - Sleek easy-to-use GTK4 interface
-- Uses **Hyprshot** for capturing screenshots
+- Uses **HyprShot** for capturing screenshots
 - Lightweight and fast
 
 ## Interface Preview
@@ -36,7 +36,7 @@ hyprshot-gui
 ```
 
 ## Configurations
-Hyprshot GUI provides two ways to configure its behavior: **configuration file** and **command-line flags**.
+HyprShot GUI provides two ways to configure its behavior: **configuration file** and **command-line flags**.
 The configuration file is generated with the install script at `~/.config/hypr/hyprshot.conf`
 
 #### Available Settings
@@ -45,9 +45,9 @@ The configuration file is generated with the install script at `~/.config/hypr/h
 | `OutputDir`    | String  | Directory where screenshots are saved            | `~/Pictures`   |
 | `Delay`        | Integer | Delay before taking a screenshot (in seconds)    | `0`            |
 | `NotifyTimeout`| Integer | Notification timeout duration (in milliseconds)  | `5000`         |
-| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `False`        |
-| `Freeze`       | Boolean | Freeze the screen on initialization              | `False`        |
-| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `False`        |
+| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `false`        |
+| `Freeze`       | Boolean | Freeze the screen on initialization              | `false`        |
+| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `false`        |
 
 #### Notes:
 - `Boolean` values accept `True`, `False`, `1`, or `0`.

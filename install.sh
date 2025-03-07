@@ -19,6 +19,7 @@ arch() {
 
     echo "Installing HyprShot GUI..."
     sudo curl -s -o /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
+    sudo chmod +x /usr/bin/hyprshot-gui
     echo "Adding HyprShot GUI to the applications list..."
     sudo curl -s -o /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
 }
@@ -44,11 +45,13 @@ other() {
         echo "cURL is not installed using wget!"
         echo "Installing HyprShot GUI..."
         sudo wget -qO /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
+        sudo chmod +x /usr/bin/hyprshot-gui
         echo "Adding HyprShot GUI to the applications list..."
         sudo wget -qO /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     else
         echo "Installing HyprShot GUI..."
         sudo curl -s -o /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
+        sudo chmod +x /usr/bin/hyprshot-gui
         echo "Adding HyprShot GUI to the applications list..."
         sudo curl -s -o /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     fi

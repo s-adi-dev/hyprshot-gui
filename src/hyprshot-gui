@@ -45,14 +45,14 @@ def load_config():
         "OutputDir": os.path.expanduser("~/Pictures"),
         "Delay": "0",
         "NotifyTimeout": "5000",
-        "ClipboardOnly": "false",
-        "Freeze": "false",
-        "Silent": "false",
+        "ClipboardOnly": "False",
+        "Freeze": "False",
+        "Silent": "False",
     }
 
     # Create config file if it doesn't exist
     if not os.path.exists(CONFIG_PATH):
-        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=true)
+        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
         config["Settings"] = default_settings
         with open(CONFIG_PATH, "w") as config_file:
             config.write(config_file)
@@ -269,10 +269,10 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         self.folder_path_label = Gtk.Label(
             label=self.truncate_path(self.output_folder)
         )
-        self.folder_path_label.set_ellipsize(true)
+        self.folder_path_label.set_ellipsize(True)
         self.folder_path_label.set_tooltip_text(self.output_folder)
         self.folder_path_label.set_halign(Gtk.Align.START)
-        self.folder_path_label.set_hexpand(true)
+        self.folder_path_label.set_hexpand(True)
 
         self.folder_button = Gtk.Button.new_from_icon_name("folder-symbolic")
         self.folder_button.set_tooltip_text("Select Folder")
@@ -377,14 +377,14 @@ class ScreenshotApp(Gtk.ApplicationWindow):
                         errorDialog.set_detail(
                             f"Selected folder is not writable: {new_folder}"
                         )
-                        errorDialog.set_modal(true)
+                        errorDialog.set_modal(True)
                         errorDialog.show(self)
 
             except Exception as e:
                 if "Dismissed by user" not in str(e):
                     errorDialog.set_message("Folder Selection Error")
                     errorDialog.set_detail(f"Error selecting folder: {str(e)}")
-                    errorDialog.set_modal(true)
+                    errorDialog.set_modal(True)
                     errorDialog.show(self)
 
         dialog.select_folder(self, None, on_response)

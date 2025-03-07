@@ -35,6 +35,24 @@ Once installed, you can launch the app from your applications menu (r/t/wofi, wa
 hyprshot-gui
 ```
 
+## Configurations
+Hyprshot GUI provides two ways to configure its behavior: **configuration file** and **command-line flags**.
+The configuration file is generated with the install script at `~/.config/hypr/hyprshot.conf`
+
+#### Available Settings
+| Setting        | Type    | Description                                      | Default Value  |
+|----------------|---------|--------------------------------------------------|----------------|
+| `OutputDir`    | String  | Directory where screenshots are saved            | `~/Pictures`   |
+| `Delay`        | Integer | Delay before taking a screenshot (in seconds)    | `0`            |
+| `NotifyTimeout`| Integer | Notification timeout duration (in milliseconds)  | `5000`         |
+| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `False`        |
+| `Freeze`       | Boolean | Freeze the screen on initialization              | `False`        |
+| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `False`        |
+
+#### Notes:
+- `Boolean` values accept `True`, `False`, `1`, or `0`.
+- `OutputDir` supports `~` expansion.
+
 #### Command Line Options
 
 | Flag | Alias | Description |

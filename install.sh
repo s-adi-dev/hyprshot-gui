@@ -9,7 +9,7 @@ fi
 arch() {
     # Install dependencies
     echo "Installing dependencies..."
-    sudo pacman -S --needed base-devel git gtk4 python-gobject curl > /dev/null
+    sudo pacman -S --needed base-devel git gtk4 python-gobject curl &> /dev/null
 
     # Check if hyprshot is already installed
     if ! command -v hyprshot &> /dev/null; then

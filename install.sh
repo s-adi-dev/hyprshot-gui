@@ -1,36 +1,27 @@
 #!/bin/bash
 
-# Ensure script is run as a normal user, not root
 if [[ $EUID -eq 0 ]]; then
     echo "DONT run this script as root!"
     exit 1
 fi
 
 arch() {
-    # Install dependencies
     echo "Installing dependencies..."
     sudo pacman -S --needed base-devel git gtk4 python-gobject curl &> /dev/null
 
-    # Check if hyprshot is already installed
     if ! command -v hyprshot &> /dev/null; then
-        # Clone the AUR repository
         git clone https://aur.archlinux.org/hyprshot.git ~/hyprshot
         cd ~/hyprshot || exit
-
-        # Build and install the package
         makepkg -si
-
-        # Clean up (optional)
         cd .. || exit
         rm -rf ~/hyprshot
     else
         echo ""
     fi
 
-    # Ensure hyprshot-gui is copied
-    echo "Installing the program..."
+    echo "Installing HyprShot GUI..."
     sudo curl -s -o /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-    echo "Adding the program to the applications list..."
+    echo "Adding HyprShot GUI to the applications list..."
     sudo curl -s -o /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
 }
 
@@ -41,7 +32,6 @@ other() {
         end
     fi
 
-    # Check if python is already installed
     if ! command -v python3 &> /dev/null || ! command -v python &> /dev/null; then
         echo "You need to install python!"
         exit
@@ -52,17 +42,16 @@ other() {
         exit
     fi
     
-    # Check if python is already installed
     if ! command -v curl &> /dev/null; then
         echo "cURL is not installed using wget!"
-        echo "Installing the program..."
+        echo "Installing HyprShot GUI..."
         sudo wget -qO /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-        echo "Adding the program to the applications list..."
+        echo "Adding HyprShot GUI to the applications list..."
         sudo wget -qO /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     else
-        echo "Installing the program..."
+        echo "Installing HyprShot GUI..."
         sudo curl -s -o /usr/bin/hyprshot-gui https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui
-        echo "Adding the program to the applications list..."
+        echo "Adding HyprShot GUI to the applications list..."
         sudo curl -s -o /usr/share/applications/hyprshot.desktop https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop
     fi
 }

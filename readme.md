@@ -50,7 +50,7 @@ The configuration file is generated with the install script at `~/.config/hypr/h
 | `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `false`        |
 
 #### Notes:
-- `Boolean` values accept `True`, `False`, `1`, or `0`.
+- `Boolean` values accept `true`, `false`, `yes`, `no`, `1`, or `0`.
 - `OutputDir` supports `~` expansion.
 
 #### Command Line Options

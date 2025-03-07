@@ -23,7 +23,7 @@ A simple GTK4-based application for taking screenshots, utilizing **HyprShot** u
 - **Python 3** (minimum required version)
 - **python-gobject**
 - **GTK4**
-- **Hyprshot**
+- **HyprShot**
 
 Then run this command
 `curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s other`

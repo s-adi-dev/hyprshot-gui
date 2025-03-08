@@ -13,7 +13,9 @@ A simple GTK4-based application for taking screenshots, utilizing **HyprShot** u
 ## Installation
 **On Arch Linux** run this command to run the install script:
 
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s arch`
+```bash
+curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s arch
+```
 
 ---
 
@@ -26,7 +28,9 @@ A simple GTK4-based application for taking screenshots, utilizing **HyprShot** u
 - **HyprShot**
 
 Then run this command
-`curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s other`
+```bash
+curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s other
+```
 
 ## Usage
 Once installed, you can launch the app from your applications menu (r/t/wofi, walker, nwg-menu, bemenu, fuzzel, anyrun, ...) or via the terminal:
@@ -45,12 +49,23 @@ The configuration file is generated with the install script at `~/.config/hypr/h
 | `OutputDir`    | String  | Directory where screenshots are saved            | `~/Pictures`   |
 | `Delay`        | Integer | Delay before taking a screenshot (in seconds)    | `0`            |
 | `NotifyTimeout`| Integer | Notification timeout duration (in milliseconds)  | `5000`         |
-| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `false`        |
-| `Freeze`       | Boolean | Freeze the screen on initialization              | `false`        |
-| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `false`        |
+| `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `False`        |
+| `Freeze`       | Boolean | Freeze the screen on initialization              | `False`        |
+| `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `False`        |
+
+- Example Configuration File
+```ini
+[Settings]
+OutputDir=~/Pictures
+Delay=0
+NotifyTimeout=5000
+ClipboardOnly=False
+Freeze=False
+Silent=False
+```
 
 #### Notes:
-- `Boolean` values accept `true`, `false`, `yes`, `no`, `1`, or `0`.
+- `Boolean` values accept `True`, `False`, `1`, or `0`.
 - `OutputDir` supports `~` expansion.
 
 #### Command Line Options
@@ -70,6 +85,15 @@ The configuration file is generated with the install script at `~/.config/hypr/h
 ```
 hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
 ```
+
+## Additional Configuration  
+To enhance the user experience, you can configure Hyprland to launch the application in floating mode by adding the following window rule to your Hyprland configuration:  
+
+```bash
+windowrulev2 = float, title:^(.*Hyprshot.*)$
+```  
+- **Note:** This rule is automatically added to your `~/.config/hypr/hyprland.conf` by the install script, so you don’t need to add it manually unless you want to verify or modify it.
+
 ## Contributing
 If you'd like to contribute, feel free to submit pull requests or report issues.
 

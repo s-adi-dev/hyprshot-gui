@@ -7,7 +7,7 @@ fi
 
 arch() {
     echo "Installing dependencies..."
-    sudo pacman -S --needed base-devel git gtk4 python-gobject curl &> /dev/null
+    sudo pacman -S --needed base-devel git gtk4 python-gobject curl
 
     if ! command -v hyprshot &> /dev/null; then
         git clone https://aur.archlinux.org/hyprshot.git ~/hyprshot
@@ -87,5 +87,5 @@ esac
 echo "Making the GUI float..."
 echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
 echo "Creating the config..."
-echo -e "[Settings]\nOutputDir = ~/Pictures\nDelay = 0\nNotifyTimeout = 5000\nClipboardOnly = true\nFreeze = true\nSilent = true" > ~/.config/hypr/hyprshot.conf
+echo -e "[Settings]\nOutputDir = ~/Pictures\nDelay = 0\nNotifyTimeout = 5000\nClipboardOnly = True\nFreeze = True\nSilent = True" > ~/.config/hypr/hyprshot.conf
 echo "Hyprshot installation completed."

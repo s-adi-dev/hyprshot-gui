@@ -28,7 +28,7 @@ Options:
   -t, --notify-timeout       notification timeout in milliseconds
 
 Description:
-  HyprShot GUI is a simple GTK4-based application for taking screenshots, 
+  Hyprshot GUI is a simple GTK4-based application for taking screenshots, 
   utilizing Hyprshot under the hood.
 """
 
@@ -127,9 +127,9 @@ def check_positive_int(value):
 
 # Argument parser
 parser = argparse.ArgumentParser(
-    description="HyprShot GUI - Simple Screenshot Tool",
-    allow_abbrev=false,
-    add_help=false,
+    description="Hyprshot GUI - Simple Screenshot Tool",
+    allow_abbrev=False,
+    add_help=False,
 )
 
 parser.add_argument("-o", "--output-folder", type=str)
@@ -156,7 +156,7 @@ if args.help:
 
 
 if args.version:
-    print(f"HyprShot GUI {VERSION}")
+    print(f"Hyprshot GUI {VERSION}")
     sys.exit(0)
 
 if args.output_folder:
@@ -169,13 +169,13 @@ if args.notify_timeout is not None:
     NotifyTimeout = args.notify_timeout
 
 if args.silent:
-    Silent = true
+    Silent = True
 
 if args.freeze:
-    Freeze = true
+    Freeze = True
 
 if args.clipboard_only:
-    ClipboardOnly = true
+    ClipboardOnly = True
 
 
 class ScreenshotApp(Gtk.ApplicationWindow):
@@ -206,7 +206,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
 
         # Screenshot Buttons Row
         button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        button_box.set_homogeneous(true)
+        button_box.set_homogeneous(True)
 
         btn_workspace = self.create_icon_button(
             "preferences-desktop-display",
@@ -235,7 +235,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         toggle_label = Gtk.Label(label="Clipboard Only:")
         toggle_label.set_halign(Gtk.Align.START)  # Align label to left
         toggle_box.append(toggle_label)
-        toggle_box.append(Gtk.Box(hexpand=true))  # Spacer for right alignment
+        toggle_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
         toggle_box.append(self.clipboard_toggle)
 
         # Delay Selection Box
@@ -257,7 +257,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         self.delay_spinner.connect("value-changed", self.on_delay_changed)
 
         delay_box.append(delay_label)
-        delay_box.append(Gtk.Box(hexpand=true))  # Spacer for right alignment
+        delay_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
         delay_box.append(self.delay_spinner)
 
         # Folder Selection Box
@@ -353,7 +353,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
     def select_custom_folder(self, button):
         dialog = Gtk.FileDialog()
         dialog.set_title("Select a Folder")
-        dialog.set_modal(true)
+        dialog.set_modal(True)
 
         def on_response(dialog, result):
 
@@ -416,7 +416,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         cmd.extend(["--output-folder", self.output_folder])
 
         # Hide the window instead of closing it so users can take the screenshot freely without the apps interference in screenshot
-        self.set_visible(false)
+        self.set_visible(False)
 
         if self.delay_seconds > 0:
             GLib.timeout_add_seconds(
@@ -433,7 +433,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         )
 
         GLib.timeout_add(100, self.check_process_exit, process)
-        return false
+        return False
 
     def check_process_exit(self, process):
         """Checks if the screenshot process is done and exits the app."""
@@ -443,9 +443,9 @@ class ScreenshotApp(Gtk.ApplicationWindow):
             app = self.get_application()
             if app:
                 app.quit()  # Quit safely
-            return false  # Stop timeout checking
+            return False  # Stop timeout checking
 
-        return true  # Keep checking
+        return True  # Keep checking
 
     def on_key_press(self, controller, keyval, keycode, state):
         """Close app when Escape key is pressed."""

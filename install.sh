@@ -87,5 +87,5 @@ esac
 echo "Making the GUI float..."
 echo "windowrulev2 = float, title:^(.*Hyprshot.*)$" >> ~/.config/hypr/hyprland.conf
 echo "Creating the config..."
-echo -e "[Settings]\nOutputDir = ~/Pictures\nDelay = 0\nNotifyTimeout = 5000\nClipboardOnly = True\nFreeze = True\nSilent = True" > ~/.config/hypr/hyprshot.conf
+echo -e "[Settings]\nOutputDir = ~/Pictures\nDelay = 0\nNotifyTimeout = 5000\nClipboardOnly = False\nFreeze = False\nSilent = False" > ~/.config/hypr/hyprshot.conf
 echo "Hyprshot installation completed."

@@ -10,27 +10,34 @@ A simple GTK4-based application for taking screenshots, utilizing **HyprShot** u
 ## Interface Preview
 ![Main Interface](assets/interface.png)
 
-## Installation
-**On Arch Linux** run this command to run the install script:
+## Installation  
+The install script supports the following distributions:  
+- **Arch Linux**  
+- **Debian/Ubuntu**  
+- **Fedora**  
+
+Run the install script based on your distribution:  
 
 ```bash
-curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s arch
+curl -fsSL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/main/install.sh | bash
+```  
+---
+
+**If your distribution is not listed or an error occurs during installation, please install the dependencies manually:**
+### Dependencies  
+- **Python 3** (minimum required version)  
+- **python-gobject**  
+- **GTK4**  
+- **HyprShot**  
+
+Then run the generic install command:  
+```bash
+curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot-gui | sudo tee /usr/bin/hyprshot-gui > /dev/null
+sudo chmod +x /usr/bin/hyprshot-gui
+curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/src/hyprshot.desktop | sudo tee /usr/share/applications/hyprshot.desktop > /dev/null
 ```
 
 ---
-
-**If you are not on arch install these dependencies**
-
-### Dependencies
-- **Python 3** (minimum required version)
-- **python-gobject**
-- **GTK4**
-- **HyprShot**
-
-Then run this command
-```bash
-curl -sL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/refs/heads/main/install.sh | sh -s other
-```
 
 ## Usage
 Once installed, you can launch the app from your applications menu (r/t/wofi, walker, nwg-menu, bemenu, fuzzel, anyrun, ...) or via the terminal:

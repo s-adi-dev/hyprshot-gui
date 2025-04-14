@@ -43,11 +43,11 @@ def load_config():
     # Default values
     default_settings = {
         "OutputDir": os.path.expanduser("~/Pictures"),
-        "Delay": "0",
-        "NotifyTimeout": "5000",
-        "ClipboardOnly": "False",
-        "Freeze": "False",
-        "Silent": "False",
+        "Delay": 0,
+        "NotifyTimeout": 5000,
+        "ClipboardOnly": False,
+        "Freeze": False,
+        "Silent": False,
     }
 
     # Create config file if it doesn't exist

@@ -9,7 +9,7 @@ import configparser
 from pathlib import Path
 
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, Gio, GLib, Gdk
+from gi.repository import Gtk, GLib, Gdk
 
 VERSION = "1.5.0"
 
@@ -415,15 +415,22 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         # Add output folder option
         cmd.extend(["--output-folder", self.output_folder])
 
-        # Hide the window instead of closing it so users can take the screenshot freely without the apps interference in screenshot
-        self.set_visible(False)
-
-        if self.delay_seconds > 0:
-            GLib.timeout_add_seconds(
-                self.delay_seconds, self.execute_screenshot, cmd
-            )
+        # For freeze mode, hide window immediately and add extra delay
+        if Freeze:
+            self.set_visible(False)
+            # Add a small delay to ensure window is fully hidden before freeze
+            freeze_delay = max(0.35, self.delay_seconds)  # At least 200ms delay
+            GLib.timeout_add(int(freeze_delay * 1000), self.execute_screenshot, cmd)
         else:
-            self.execute_screenshot(cmd)
+            # Hide the window for non-freeze mode
+            self.set_visible(False)
+            
+            if self.delay_seconds > 0:
+                GLib.timeout_add_seconds(
+                    self.delay_seconds, self.execute_screenshot, cmd
+                )
+            else:
+                self.execute_screenshot(cmd)
 
     def execute_screenshot(self, cmd):
         """Executes the screenshot command and schedules exit."""

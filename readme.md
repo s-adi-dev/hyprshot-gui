@@ -16,17 +16,15 @@ The install script supports the following distributions:
 - **Debian/Ubuntu**  
 - **Fedora**  
 
-### Arch (via AUR)
+#### Arch (via AUR)
 
 If you're using an AUR helper (like `yay`, `paru`, etc.), install it with:
 
 ```bash
-yay -Syu hyprshot-gui
-# or
-paru -Syu hyprshot-gui
+yay -Sy hyprshot-gui
 ````
 
-### Install Script (For all supported distributions)
+#### Install Script (For all supported distributions)
 
 Run the install script based on your distribution:
 

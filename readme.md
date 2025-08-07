@@ -16,11 +16,23 @@ The install script supports the following distributions:
 - **Debian/Ubuntu**  
 - **Fedora**  
 
-Run the install script based on your distribution:  
+### Arch (via AUR)
+
+If you're using an AUR helper (like `yay`, `paru`, etc.), install it with:
+
+```bash
+yay -Syu hyprshot-gui
+# or
+paru -Syu hyprshot-gui
+````
+
+### Install Script (For all supported distributions)
+
+Run the install script based on your distribution:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/s-adi-dev/hyprshot-gui/main/install.sh | bash
-```  
+``` 
 ---
 
 **If your distribution is not listed or an error occurs during installation, please install the dependencies manually:**
@@ -57,7 +69,6 @@ The configuration file is generated with the install script at `~/.config/hypr/h
 | `Delay`        | Integer | Delay before taking a screenshot (in seconds)    | `0`            |
 | `NotifyTimeout`| Integer | Notification timeout duration (in milliseconds)  | `5000`         |
 | `ClipboardOnly`| Boolean | Save screenshot only to clipboard                | `False`        |
-| `Freeze`       | Boolean | Freeze the screen on initialization              | `False`        |
 | `Silent`       | Boolean | Suppress notifications when saving a screenshot  | `False`        |
 
 - Example Configuration File
@@ -67,7 +78,6 @@ OutputDir=~/Pictures
 Delay=0
 NotifyTimeout=5000
 ClipboardOnly=False
-Freeze=False
 Silent=False
 ```
 
@@ -82,7 +92,6 @@ Silent=False
 | `-h` | `--help` | Show help message and exit |
 | `-v` | `--version` | Show version information and exit |
 | `-o <path>` | `--output-folder <path>` | Set directory to save screenshots |
-| `-z` | `--freeze` | Freeze the screen on initialization |
 | `-d <seconds>` | `--delay <seconds>` | Set delay before taking a screenshot |
 | `--clipboard-only` | | Save only to clipboard |
 | `-s` | `--silent` | Do not send notification when a screenshot is saved |

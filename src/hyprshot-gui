@@ -7,11 +7,16 @@ import subprocess
 import os
 import configparser
 from pathlib import Path
+from dataclasses import dataclass
+from typing import Optional, Dict, Any, List
+import logging
 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib, Gdk
 
+# Constants
 VERSION = "1.5.0"
+CONFIG_PATH = os.path.expanduser("~/.config/hypr/hyprshot.conf")
 
 HELP_TEXT = """Usage: hyprshot-gui [OPTIONS]
 
@@ -20,7 +25,6 @@ Options:
   -v, --version             Show version information and exit.
 
   -o, --output-folder       directory in which to save screenshot 
-  -z, --freeze              freeze the screen on initialization
   -d, --delay               time delay in taking screenshot
   --clipboard-only          Save only to clipboard
 
@@ -32,170 +36,236 @@ Description:
   utilizing Hyprshot under the hood.
 """
 
-
-CONFIG_PATH = os.path.expanduser("~/.config/hypr/hyprshot.conf")
-
-
-def load_config():
-    """Loads config with validation and default fallbacks."""
-    config = configparser.ConfigParser()
-
-    # Default values
-    default_settings = {
-        "OutputDir": os.path.expanduser("~/Pictures"),
-        "Delay": 0,
-        "NotifyTimeout": 5000,
-        "ClipboardOnly": False,
-        "Freeze": False,
-        "Silent": False,
-    }
-
-    # Create config file if it doesn't exist
-    if not os.path.exists(CONFIG_PATH):
-        os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
-        config["Settings"] = default_settings
-        with open(CONFIG_PATH, "w") as config_file:
-            config.write(config_file)
-
-    # Read existing config
-    config.read(CONFIG_PATH)
-    settings = config["Settings"]
-
-    # Validate and apply defaults if needed
-    validated_settings = {
-        "OutputDir": os.path.expanduser(
-            settings.get("OutputDir", default_settings["OutputDir"])
-        ),
-        "Delay": validate_int(
-            settings.get("Delay", default_settings["Delay"]), 0
-        ),
-        "NotifyTimeout": validate_int(
-            settings.get("NotifyTimeout", default_settings["NotifyTimeout"]),
-            5000,
-        ),
-        "ClipboardOnly": validate_bool(
-            settings.get("ClipboardOnly", default_settings["ClipboardOnly"])
-        ),
-        "Freeze": validate_bool(
-            settings.get("Freeze", default_settings["Freeze"])
-        ),
-        "Silent": validate_bool(
-            settings.get("Silent", default_settings["Silent"])
-        ),
-    }
-
-    return validated_settings
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def validate_int(value, default):
-    """Ensures value is a valid integer, otherwise returns default."""
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
+@dataclass
+class AppSettings:
+    """Data class to hold application settings."""
+    output_dir: str = os.path.expanduser("~/Pictures")
+    delay: int = 0
+    notify_timeout: int = 5000
+    clipboard_only: bool = False
+    silent: bool = False
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert settings to dictionary for config file."""
+        return {
+            "OutputDir": self.output_dir,
+            "Delay": str(self.delay),
+            "NotifyTimeout": str(self.notify_timeout),
+            "ClipboardOnly": str(self.clipboard_only),
+            "Silent": str(self.silent),
+        }
 
 
-def validate_bool(value):
-    """Ensures value is a valid boolean."""
-    return str(value).strip().lower() in ["true", "1", "yes"]
+class ConfigManager:
+    """Handles configuration loading and validation."""
+    
+    def __init__(self, config_path: str = CONFIG_PATH):
+        self.config_path = config_path
+        self.default_settings = AppSettings()
+    
+    def load_config(self) -> AppSettings:
+        """Loads config with validation and default fallbacks."""
+        config = configparser.ConfigParser()
+        
+        # Create config file if it doesn't exist
+        if not os.path.exists(self.config_path):
+            self._create_default_config()
+        
+        # Read existing config
+        try:
+            config.read(self.config_path)
+            settings_dict = dict(config["Settings"])
+            return self._validate_settings(settings_dict)
+        except Exception as e:
+            logger.warning(f"Error reading config: {e}. Using defaults.")
+            return self.default_settings
+    
+    def _create_default_config(self):
+        """Creates a default configuration file."""
+        try:
+            os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
+            config = configparser.ConfigParser()
+            config["Settings"] = self.default_settings.to_dict()
+            with open(self.config_path, "w") as config_file:
+                config.write(config_file)
+        except Exception as e:
+            logger.error(f"Failed to create config file: {e}")
+    
+    def _validate_settings(self, settings_dict: Dict[str, str]) -> AppSettings:
+        """Validates settings from config file."""
+        return AppSettings(
+            output_dir=os.path.expanduser(
+                settings_dict.get("OutputDir", self.default_settings.output_dir)
+            ),
+            delay=self._validate_int(
+                settings_dict.get("Delay"), self.default_settings.delay
+            ),
+            notify_timeout=self._validate_int(
+                settings_dict.get("NotifyTimeout"), self.default_settings.notify_timeout
+            ),
+            clipboard_only=self._validate_bool(
+                settings_dict.get("ClipboardOnly", str(self.default_settings.clipboard_only))
+            ),
+            silent=self._validate_bool(
+                settings_dict.get("Silent", str(self.default_settings.silent))
+            ),
+        )
+    
+    @staticmethod
+    def _validate_int(value: Optional[str], default: int) -> int:
+        """Ensures value is a valid integer, otherwise returns default."""
+        if value is None:
+            return default
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return default
+    
+    @staticmethod
+    def _validate_bool(value: str) -> bool:
+        """Ensures value is a valid boolean."""
+        return str(value).strip().lower() in ["true", "1", "yes"]
 
 
-# Load configuration at startup with validation
-config = load_config()
+class ArgumentParser:
+    """Handles command line argument parsing."""
+    
+    def __init__(self):
+        self.parser = self._create_parser()
+    
+    def _create_parser(self) -> argparse.ArgumentParser:
+        """Creates the argument parser."""
+        parser = argparse.ArgumentParser(
+            description="Hyprshot GUI - Simple Screenshot Tool",
+            allow_abbrev=False,
+            add_help=False,
+        )
+        
+        parser.add_argument("-o", "--output-folder", type=str)
+        parser.add_argument("-d", "--delay", type=self._check_positive_int)
+        parser.add_argument("-t", "--notify-timeout", type=self._check_positive_int)
+        parser.add_argument("--clipboard-only", action="store_true")
+        parser.add_argument("-s", "--silent", action="store_true")
+        parser.add_argument("-v", "--version", action="store_true")
+        parser.add_argument("-h", "--help", action="store_true")
+        
+        return parser
+    
+    @staticmethod
+    def _check_positive_int(value: str) -> int:
+        """Validates positive integer arguments."""
+        try:
+            ivalue = int(value)
+            if ivalue < 0:
+                raise argparse.ArgumentTypeError(
+                    "Delay must be a non-negative integer."
+                )
+            return ivalue
+        except ValueError:
+            raise argparse.ArgumentTypeError(f"Invalid integer value: '{value}'")
+    
+    def parse_args(self) -> argparse.Namespace:
+        """Parses command line arguments."""
+        return self.parser.parse_args()
+    
+    def handle_special_args(self, args: argparse.Namespace) -> bool:
+        """Handles help and version arguments. Returns True if app should exit."""
+        if args.help:
+            print(HELP_TEXT)
+            return True
+        
+        if args.version:
+            print(f"Hyprshot GUI {VERSION}")
+            return True
+        
+        return False
+    
+    def apply_args_to_settings(self, args: argparse.Namespace, settings: AppSettings) -> AppSettings:
+        """Applies command line arguments to settings."""
+        if args.output_folder:
+            settings.output_dir = os.path.expanduser(args.output_folder)
+        
+        if args.delay is not None:
+            settings.delay = args.delay
+        
+        if args.notify_timeout is not None:
+            settings.notify_timeout = args.notify_timeout
+        
+        if args.silent:
+            settings.silent = True
+        
+        if args.clipboard_only:
+            settings.clipboard_only = True
+        
+        return settings
 
-# Application variables
-OutputDir = config["OutputDir"]
-Delay = config["Delay"]
-NotifyTimeout = config["NotifyTimeout"]
-ClipboardOnly = config["ClipboardOnly"]
-Freeze = config["Freeze"]
-Silent = config["Silent"]
 
-
-# Types
-def check_positive_int(value):
-    try:
-        ivalue = int(value)
-        if ivalue < 0:
-            raise argparse.ArgumentTypeError(
-                "Delay must be a non-negative integer."
+class ScreenshotRunner:
+    """Handles screenshot command execution."""
+    
+    def __init__(self, settings: AppSettings):
+        self.settings = settings
+    
+    def build_command(self, mode: str, current_output_dir: str, 
+                     clipboard_only: bool, delay: int) -> List[str]:
+        """Builds the screenshot command."""
+        cmd = ["hyprshot", "-m", mode]
+        
+        if clipboard_only:
+            cmd.append("--clipboard-only")
+        
+        if self.settings.silent:
+            cmd.append("--silent")
+        
+        if self.settings.notify_timeout > 0:
+            cmd.extend(["-t", str(self.settings.notify_timeout)])
+        
+        cmd.extend(["--output-folder", current_output_dir])
+        
+        return cmd
+    
+    def execute_async(self, cmd: List[str], callback) -> subprocess.Popen:
+        """Executes screenshot command asynchronously."""
+        try:
+            process = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
             )
-        return ivalue
-    except ValueError:
-        raise argparse.ArgumentTypeError(f"Invalid integer value: '{value}'")
-
-
-# Argument parser
-parser = argparse.ArgumentParser(
-    description="Hyprshot GUI - Simple Screenshot Tool",
-    allow_abbrev=False,
-    add_help=False,
-)
-
-parser.add_argument("-o", "--output-folder", type=str)
-
-parser.add_argument("-d", "--delay", type=check_positive_int)
-
-parser.add_argument("-t", "--notify-timeout", type=check_positive_int)
-
-parser.add_argument("--clipboard-only", action="store_true")
-
-parser.add_argument("-z", "--freeze", action="store_true")
-
-parser.add_argument("-s", "--silent", action="store_true")
-
-parser.add_argument("-v", "--version", action="store_true")
-
-parser.add_argument("-h", "--help", action="store_true")
-
-args = parser.parse_args()
-
-if args.help:
-    print(HELP_TEXT)
-    sys.exit(0)
-
-
-if args.version:
-    print(f"Hyprshot GUI {VERSION}")
-    sys.exit(0)
-
-if args.output_folder:
-    OutputDir = os.path.expanduser(args.output_folder)  # Expand tilde (~)
-
-if args.delay is not None:
-    Delay = args.delay
-
-if args.notify_timeout is not None:
-    NotifyTimeout = args.notify_timeout
-
-if args.silent:
-    Silent = True
-
-if args.freeze:
-    Freeze = True
-
-if args.clipboard_only:
-    ClipboardOnly = True
+            GLib.timeout_add(100, callback, process)
+            return process
+        except Exception as e:
+            logger.error(f"Failed to execute screenshot command: {e}")
+            raise
 
 
 class ScreenshotApp(Gtk.ApplicationWindow):
-    def __init__(self, app):
+    """Main application window."""
+    
+    def __init__(self, app: Gtk.Application, settings: AppSettings):
         super().__init__(
             application=app,
             title="Hyprshot",
             default_height=150,
         )
-
-        key_controller = Gtk.EventControllerKey()
-        key_controller.connect("key-pressed", self.on_key_press)
-        self.add_controller(key_controller)
-
-        self.delay_seconds = Delay  # Default delay
-        self.output_folder = os.path.expanduser(OutputDir)  # Default folder
-
-        # Load inline CSS
-        self.load_css()
-
+        
+        self.settings = settings
+        self.screenshot_runner = ScreenshotRunner(settings)
+        
+        # Current runtime settings (can be modified by UI)
+        self.current_delay = settings.delay
+        self.current_output_dir = os.path.expanduser(settings.output_dir)
+        
+        self._setup_ui()
+        self._setup_event_handlers()
+    
+    def _setup_ui(self):
+        """Sets up the user interface."""
+        self._load_css()
+        
         # Main Layout
         vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20)
         vbox.set_margin_top(20)
@@ -203,49 +273,117 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         vbox.set_margin_start(20)
         vbox.set_margin_end(20)
         self.set_child(vbox)
-
-        # Screenshot Buttons Row
+        
+        # Screenshot Buttons
+        button_box = self._create_button_box()
+        vbox.append(button_box)
+        
+        # Options Frame
+        options_frame = self._create_options_frame()
+        vbox.append(options_frame)
+    
+    def _setup_event_handlers(self):
+        """Sets up event handlers."""
+        key_controller = Gtk.EventControllerKey()
+        key_controller.connect("key-pressed", self._on_key_press)
+        self.add_controller(key_controller)
+    
+    def _create_button_box(self) -> Gtk.Box:
+        """Creates the screenshot button box."""
         button_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         button_box.set_homogeneous(True)
-
-        btn_workspace = self.create_icon_button(
-            "preferences-desktop-display",
-            "Workspace",
-            self.take_workspace_screenshot,
-        )
-        btn_window = self.create_icon_button(
-            "tablet-symbolic", "Window", self.take_window_screenshot
-        )
-        btn_region = self.create_icon_button(
-            "input-mouse-symbolic",
-            "Selection",
-            self.take_region_screenshot,
-        )
-
-        button_box.append(btn_workspace)
-        button_box.append(btn_window)
-        button_box.append(btn_region)
-
-        vbox.append(button_box)
-
-        # Toggle switch for clipboard mode
+        
+        buttons = [
+            ("preferences-desktop-display", "Workspace", self._take_workspace_screenshot),
+            ("tablet-symbolic", "Window", self._take_window_screenshot),
+            ("input-mouse-symbolic", "Selection", self._take_region_screenshot),
+        ]
+        
+        for icon_name, label_text, callback in buttons:
+            btn = self._create_icon_button(icon_name, label_text, callback)
+            button_box.append(btn)
+        
+        return button_box
+    
+    def _create_icon_button(self, icon_name: str, label_text: str, callback) -> Gtk.Button:
+        """Creates a button with an icon and fixed size."""
+        button = Gtk.Button()
+        
+        # Create Icon
+        icon = Gtk.Image.new_from_icon_name(icon_name)
+        icon.set_pixel_size(24)
+        icon.set_halign(Gtk.Align.CENTER)
+        icon.set_valign(Gtk.Align.CENTER)
+        icon.set_margin_bottom(10)
+        
+        # Create Label
+        label = Gtk.Label(label=label_text)
+        label.set_halign(Gtk.Align.CENTER)
+        
+        # Create Vertical Box to stack icon and text
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        box.set_halign(Gtk.Align.CENTER)
+        box.set_valign(Gtk.Align.CENTER)
+        box.append(icon)
+        box.append(label)
+        
+        button.set_child(box)
+        button.set_css_classes(["screenshot-button"])
+        button.set_size_request(80, 80)
+        button.connect("clicked", callback)
+        
+        return button
+    
+    def _create_options_frame(self) -> Gtk.Frame:
+        """Creates the options frame with all controls."""
+        options_frame = Gtk.Frame()
+        options_frame.set_css_classes(["options-box"])
+        
+        options_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        options_box.set_margin_top(5)
+        options_box.set_margin_bottom(5)
+        options_box.set_margin_start(5)
+        options_box.set_margin_end(5)
+        
+        # Clipboard toggle
+        toggle_box = self._create_clipboard_toggle()
+        options_box.append(toggle_box)
+        
+        # Delay spinner
+        delay_box = self._create_delay_spinner()
+        options_box.append(delay_box)
+        
+        # Folder selector
+        folder_box = self._create_folder_selector()
+        options_box.append(folder_box)
+        
+        options_frame.set_child(options_box)
+        return options_frame
+    
+    def _create_clipboard_toggle(self) -> Gtk.Box:
+        """Creates the clipboard toggle control."""
         self.clipboard_toggle = Gtk.Switch()
-        self.clipboard_toggle.set_active(ClipboardOnly)  # Default: Off
+        self.clipboard_toggle.set_active(self.settings.clipboard_only)
+        
         toggle_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         toggle_label = Gtk.Label(label="Clipboard Only:")
-        toggle_label.set_halign(Gtk.Align.START)  # Align label to left
+        toggle_label.set_halign(Gtk.Align.START)
+        
         toggle_box.append(toggle_label)
-        toggle_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        toggle_box.append(Gtk.Box(hexpand=True))  # Spacer
         toggle_box.append(self.clipboard_toggle)
-
-        # Delay Selection Box
+        
+        return toggle_box
+    
+    def _create_delay_spinner(self) -> Gtk.Box:
+        """Creates the delay spinner control."""
         delay_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         delay_label = Gtk.Label(label="Delay in Seconds:")
-        delay_label.set_halign(Gtk.Align.START)  # Align label to left
-
+        delay_label.set_halign(Gtk.Align.START)
+        
         self.delay_spinner = Gtk.SpinButton()
         adjustment = Gtk.Adjustment(
-            value=Delay,
+            value=self.settings.delay,
             lower=0,
             upper=60,
             step_increment=1,
@@ -253,214 +391,157 @@ class ScreenshotApp(Gtk.ApplicationWindow):
             page_size=0,
         )
         self.delay_spinner.set_adjustment(adjustment)
-        self.delay_spinner.set_value(self.delay_seconds)
-        self.delay_spinner.connect("value-changed", self.on_delay_changed)
-
+        self.delay_spinner.set_value(self.current_delay)
+        self.delay_spinner.connect("value-changed", self._on_delay_changed)
+        
         delay_box.append(delay_label)
-        delay_box.append(Gtk.Box(hexpand=True))  # Spacer for right alignment
+        delay_box.append(Gtk.Box(hexpand=True))  # Spacer
         delay_box.append(self.delay_spinner)
-
-        # Folder Selection Box
+        
+        return delay_box
+    
+    def _create_folder_selector(self) -> Gtk.Box:
+        """Creates the folder selector control."""
         folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         folder_label = Gtk.Label(label="Save to:")
-        folder_label.set_halign(Gtk.Align.START)  # Align label to left
-
+        folder_label.set_halign(Gtk.Align.START)
+        
         # Display current folder path
         self.folder_path_label = Gtk.Label(
-            label=self.truncate_path(self.output_folder)
+            label=self._truncate_path(self.current_output_dir)
         )
         self.folder_path_label.set_ellipsize(True)
-        self.folder_path_label.set_tooltip_text(self.output_folder)
+        self.folder_path_label.set_tooltip_text(self.current_output_dir)
         self.folder_path_label.set_halign(Gtk.Align.START)
         self.folder_path_label.set_hexpand(True)
-
+        
         self.folder_button = Gtk.Button.new_from_icon_name("folder-symbolic")
         self.folder_button.set_tooltip_text("Select Folder")
-        self.folder_button.connect("clicked", self.select_custom_folder)
-
-        folder_path_box = Gtk.Box(
-            orientation=Gtk.Orientation.HORIZONTAL, spacing=5
-        )
+        self.folder_button.connect("clicked", self._select_custom_folder)
+        
+        folder_path_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         folder_path_box.append(self.folder_path_label)
         folder_path_box.append(self.folder_button)
-
+        
         folder_box.append(folder_label)
         folder_box.append(folder_path_box)
-
-        # Create a frame to wrap options
-        options_frame = Gtk.Frame()
-        options_frame.set_css_classes(
-            ["options-box"]
-        )  # Add CSS class for styling
-
-        options_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        options_box.set_margin_top(5)
-        options_box.set_margin_bottom(5)
-        options_box.set_margin_start(5)
-        options_box.set_margin_end(5)
-
-        # Add elements to the options box
-        options_box.append(toggle_box)
-        options_box.append(delay_box)
-        options_box.append(folder_box)
-
-        # Add options box inside the frame
-        options_frame.set_child(options_box)
-        vbox.append(options_frame)
-
-    def create_icon_button(self, icon_name, label_text, callback):
-        """Creates a button with an icon and fixed size."""
-        button = Gtk.Button()
-
-        # Create Icon
-        icon = Gtk.Image.new_from_icon_name(icon_name)
-        icon.set_pixel_size(24)  # Set the icon size in pixels
-        icon.set_halign(Gtk.Align.CENTER)
-        icon.set_valign(Gtk.Align.CENTER)
-        icon.set_margin_bottom(10)
-
-        # Create Label
-        label = Gtk.Label(label=label_text)
-        label.set_halign(Gtk.Align.CENTER)
-
-        # Create Vertical Box to stack icon and text
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
-        box.set_halign(Gtk.Align.CENTER)
-        box.set_valign(Gtk.Align.CENTER)
-
-        box.append(icon)
-        box.append(label)
-
-        button.set_child(box)
-
-        button.set_css_classes(["screenshot-button"])  # Add styling
-        button.set_size_request(80, 80)  # Set fixed width and height
-        button.connect("clicked", callback)
-
-        return button
-
-    def on_delay_changed(self, spinner):
-        """Updates delay_seconds when the spin button value changes."""
-        self.delay_seconds = int(spinner.get_value())
-
-    def truncate_path(self, path, max_length=15):
-        """Truncate path to a reasonable length for display"""
-        path_obj = Path(path)
-        if len(str(path)) <= max_length:
-            return str(path)
-        return f"...{str(path_obj)[-max_length:]}"
-
-    def select_custom_folder(self, button):
+        
+        return folder_box
+    
+    def _on_delay_changed(self, spinner):
+        """Updates delay when the spin button value changes."""
+        self.current_delay = int(spinner.get_value())
+    
+    def _truncate_path(self, path: str, max_length: int = 15) -> str:
+        """Truncate path to a reasonable length for display."""
+        if len(path) <= max_length:
+            return path
+        return f"...{path[-max_length:]}"
+    
+    def _select_custom_folder(self, button):
+        """Opens folder selection dialog."""
         dialog = Gtk.FileDialog()
         dialog.set_title("Select a Folder")
         dialog.set_modal(True)
-
-        def on_response(dialog, result):
-
-            errorDialog = Gtk.AlertDialog()
-            try:
-                folder = dialog.select_folder_finish(result)
-                if folder:
-                    new_folder = folder.get_path()
-                    # Check if folder is writable
-                    if os.access(new_folder, os.W_OK):
-                        self.output_folder = new_folder
-                        self.folder_path_label.set_text(
-                            self.truncate_path(self.output_folder)
-                        )
-                        self.folder_path_label.set_tooltip_text(
-                            self.output_folder
-                        )
-                    else:
-
-                        errorDialog.set_message("Permission Error")
-                        errorDialog.set_detail(
-                            f"Selected folder is not writable: {new_folder}"
-                        )
-                        errorDialog.set_modal(True)
-                        errorDialog.show(self)
-
-            except Exception as e:
-                if "Dismissed by user" not in str(e):
-                    errorDialog.set_message("Folder Selection Error")
-                    errorDialog.set_detail(f"Error selecting folder: {str(e)}")
-                    errorDialog.set_modal(True)
-                    errorDialog.show(self)
-
-        dialog.select_folder(self, None, on_response)
-
-    def take_workspace_screenshot(self, button):
-        self.run_screenshot(["hyprshot", "-m", "output"])
-
-    def take_window_screenshot(self, button):
-        self.run_screenshot(["hyprshot", "-m", "window"])
-
-    def take_region_screenshot(self, button):
-        self.run_screenshot(["hyprshot", "-m", "region"])
-
-    def run_screenshot(self, cmd):
-        """Runs the screenshot command asynchronously with delay."""
-        if self.clipboard_toggle.get_active():
-            cmd.append("--clipboard-only")
-
-        if Freeze:
-            cmd.append("--freeze")
-
-        if Silent:
-            cmd.append("--silent")
-
-        if NotifyTimeout is not None and NotifyTimeout > 0:
-            cmd.append(f"-t {NotifyTimeout}")
-
-        # Add output folder option
-        cmd.extend(["--output-folder", self.output_folder])
-
-        # For freeze mode, hide window immediately and add extra delay
-        if Freeze:
-            self.set_visible(False)
-            # Add a small delay to ensure window is fully hidden before freeze
-            freeze_delay = max(0.35, self.delay_seconds)  # At least 200ms delay
-            GLib.timeout_add(int(freeze_delay * 1000), self.execute_screenshot, cmd)
-        else:
-            # Hide the window for non-freeze mode
+        dialog.select_folder(self, None, self._on_folder_selected)
+    
+    def _on_folder_selected(self, dialog, result):
+        """Handles folder selection result."""
+        try:
+            folder = dialog.select_folder_finish(result)
+            if folder:
+                new_folder = folder.get_path()
+                if os.access(new_folder, os.W_OK):
+                    self.current_output_dir = new_folder
+                    self.folder_path_label.set_text(
+                        self._truncate_path(self.current_output_dir)
+                    )
+                    self.folder_path_label.set_tooltip_text(self.current_output_dir)
+                else:
+                    self._show_error_dialog(
+                        "Permission Error",
+                        f"Selected folder is not writable: {new_folder}"
+                    )
+        except Exception as e:
+            if "Dismissed by user" not in str(e):
+                self._show_error_dialog(
+                    "Folder Selection Error",
+                    f"Error selecting folder: {str(e)}"
+                )
+    
+    def _show_error_dialog(self, title: str, message: str):
+        """Shows an error dialog."""
+        error_dialog = Gtk.AlertDialog()
+        error_dialog.set_message(title)
+        error_dialog.set_detail(message)
+        error_dialog.set_modal(True)
+        error_dialog.show(self)
+    
+    def _take_workspace_screenshot(self, button):
+        """Takes a workspace screenshot."""
+        self._run_screenshot("output")
+    
+    def _take_window_screenshot(self, button):
+        """Takes a window screenshot."""
+        self._run_screenshot("window")
+    
+    def _take_region_screenshot(self, button):
+        """Takes a region screenshot."""
+        self._run_screenshot("region")
+    
+    def _run_screenshot(self, mode: str):
+        """Runs the screenshot command with proper window hiding."""
+        try:
+            cmd = self.screenshot_runner.build_command(
+                mode,
+                self.current_output_dir,
+                self.clipboard_toggle.get_active(),
+                self.current_delay
+            )
+            
+            # Hide window and execute screenshot
             self.set_visible(False)
             
-            if self.delay_seconds > 0:
+            if self.current_delay > 0:
                 GLib.timeout_add_seconds(
-                    self.delay_seconds, self.execute_screenshot, cmd
+                    self.current_delay, self._execute_screenshot, cmd
                 )
             else:
-                self.execute_screenshot(cmd)
-
-    def execute_screenshot(self, cmd):
-        """Executes the screenshot command and schedules exit."""
-
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
-
-        GLib.timeout_add(100, self.check_process_exit, process)
-        return False
-
-    def check_process_exit(self, process):
+                self._execute_screenshot(cmd)
+                    
+        except Exception as e:
+            logger.error(f"Failed to run screenshot: {e}")
+            self._show_error_dialog("Screenshot Error", str(e))
+    
+    def _execute_screenshot(self, cmd: List[str]) -> bool:
+        """Executes the screenshot command."""
+        try:
+            self.screenshot_runner.execute_async(cmd, self._check_process_exit)
+            return False
+        except Exception as e:
+            logger.error(f"Failed to execute screenshot: {e}")
+            self._show_error_dialog("Execution Error", str(e))
+            return False
+    
+    def _check_process_exit(self, process: subprocess.Popen) -> bool:
         """Checks if the screenshot process is done and exits the app."""
-
         if process.poll() is not None:  # Process has finished
-            self.destroy()  # Close the window
+            self.destroy()
             app = self.get_application()
             if app:
-                app.quit()  # Quit safely
-            return False  # Stop timeout checking
-
-        return True  # Keep checking
-
-    def on_key_press(self, controller, keyval, keycode, state):
-        """Close app when Escape key is pressed."""
+                app.quit()
+            return False
+        return True
+    
+    def _on_key_press(self, controller, keyval, keycode, state) -> bool:
+        """Handles key press events."""
         if keyval == Gdk.KEY_Escape:
-            self.close()  # Closes the window
-
-    def load_css(self):
-        """Loads inline CSS for styling."""
+            self.close()
+            return True
+        return False
+    
+    def _load_css(self):
+        """Loads CSS for styling."""
         css = """
         .options-box {
             border: 2px solid #888;
@@ -470,7 +551,7 @@ class ScreenshotApp(Gtk.ApplicationWindow):
         """
         provider = Gtk.CssProvider()
         provider.load_from_data(css.encode("utf-8"))
-
+        
         Gtk.StyleContext.add_provider_for_display(
             Gdk.Display.get_default(),
             provider,
@@ -479,17 +560,47 @@ class ScreenshotApp(Gtk.ApplicationWindow):
 
 
 class ScreenshotAppMain(Gtk.Application):
-    def __init__(self):
+    """Main application class."""
+    
+    def __init__(self, settings: AppSettings):
         super().__init__()
-
+        self.settings = settings
+    
     def do_activate(self):
-        win = ScreenshotApp(self)
+        """Creates and presents the main window."""
+        win = ScreenshotApp(self, self.settings)
         win.present()
 
 
-if __name__ == "__main__":
+def main():
+    """Main entry point."""
     try:
-        app = ScreenshotAppMain()
+        # Load configuration
+        config_manager = ConfigManager()
+        settings = config_manager.load_config()
+        
+        # Parse command line arguments
+        arg_parser = ArgumentParser()
+        args = arg_parser.parse_args()
+        
+        # Handle special arguments (help, version)
+        if arg_parser.handle_special_args(args):
+            sys.exit(0)
+        
+        # Apply command line overrides
+        settings = arg_parser.apply_args_to_settings(args, settings)
+        
+        # Create and run application
+        app = ScreenshotAppMain(settings)
         app.run()
+        
     except KeyboardInterrupt:
-        print("Application stopped manually.")
+        logger.info("Application stopped manually.")
+        sys.exit(0)
+    except Exception as e:
+        logger.error(f"Application error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

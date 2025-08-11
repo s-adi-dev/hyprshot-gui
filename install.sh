@@ -27,6 +27,12 @@ main() {
     local H_DEST
     local HYPRSHOT_URL
     local TEMP_DIR
+    local DOCPATH
+    local LICENSE_PATH
+    local README
+    local LICENSE
+    local REMOTE_README
+    local REMOTE_LICENSE
 
     BASE_URL="https://raw.githubusercontent.com"
     HGUI_REMOTE="${BASE_URL}/s-adi-dev/hyprshot-gui/refs/heads/main/src"
@@ -41,6 +47,12 @@ main() {
     H_DEST="/usr/bin/${H_EXEC}"
     HYPRSHOT_URL="${BASE_URL}/gustash/hyprshot/refs/heads/main/${H_EXEC}"
     TEMP_DIR="$(mktemp --directory --suffix -HYPRSHOT-GUI)"
+    DOCPATH="/usr/share/hyprshot-gui/doc"
+    LICENSE_PATH="/usr/share/hyprshot-gui/licenses"
+    README="readme.md"
+    LICENSE="LICENSE"
+    REMOTE_README="${HGUI_REMOTE}/${README}"
+    REMOTE_LICENSE="${HGUI_REMOTE}/${LICENSE}"
 
     super_user_check
     hyprshot_requirements "$(which_distro_is_this)"
@@ -128,8 +140,21 @@ super_user_check() {
 hyprshot_defaults() {
 
     local configuration_defaults
+    local user_pic_dir
+
+    if [[ -z "${XDG_PICTURES_DIR}" ]]; then
+        if command -v xdg-user-dir; then
+            user_pic_dir="$(xdg-user-dir PICTURES)"
+        elif [[ -s "${HOME}/.config/user-dirs.dirs" ]]; then
+            # shellcheck source=/dev/null
+            source "${HOME}/.config/user-dirs.dirs"
+            user_pic_dir="${XDG_PICTURES_DIR}"
+        else
+            user_pic_dir="${HOME}/Pictures"
+        fi
+    fi
     configuration_defaults="[Settings]
-OutputDir = ${XDG_PICTURES_DIR}
+OutputDir = ${user_pic_dir}
 Delay = 0
 NotifyTimeout = 5000
 ClipboardOnly = False
@@ -154,11 +179,13 @@ hyprshot_obtain_raw() {
         [${H_EXEC}]=${HYPRSHOT_URL}
         [${HGUI_EXEC}]=${REMOTE_EXEC}
         [${HGUI_DESK}]=${REMOTE_DESK}
+        [${README}]=${REMOTE_README}
+        [${LICENSE}]=${REMOTE_LICENSE}
     )
 
     for w in "${!wanted[@]}"; do
         printf "\nObtaining %s \n\tfrom %s...\n" "${w}" "${wanted[${w}]}"
-        curl --silent --location --progress-bar --continue-at - "${wanted[${w}]}" --output "${TEMP_DIR}/${w}"
+        echo curl --silent --location --progress-bar --continue-at - "${wanted[${w}]}" --output "${TEMP_DIR}/${w}"
         DOWNLOADED+=("${TEMP_DIR}/${w}")
     done
 
@@ -170,8 +197,13 @@ hyprshot_installation() {
 
     # local hyprshot_ver
     # local hyprshotgui_ver
+    local readme_name
+    local license_name
+
     # hyprshot_ver="$(hyprshot --version)"
     # hyprshotgui_ver="$(hyprshot-gui --version)"
+    readme_name="$(basename "${REMOTE_README}")"
+    license_name="$(basename "${REMOTE_LICENSE}")"
 
     printf "\nInstalling Hyprshot... (%s)\n" "${H_EXEC}"
     "${PRIVUP}" install --verbose --compare --mode 755 "${TEMP_DIR}/${H_EXEC}" "${H_DEST}"
@@ -180,6 +212,11 @@ hyprshot_installation() {
     "${PRIVUP}" install --verbose --compare --mode 755 "${TEMP_DIR}/${HGUI_EXEC}" "${HGUI_DEST}"
 
     printf "\nCopying HyprShot GUI desktop file... (%s)\n" "${HGUI_DESK}"
+    "${PRIVUP}" cp --verbose "${TEMP_DIR}/${HGUI_DESK}" "${HGUI_DESK_DEST}"
+
+    printf "\nCopying readme and license files... (%s,%s)\n" "${readme_name}" "${license_name}"
+    "${PRIVUP}" mkdir --verbose "${DOCPATH}"
+    "${PRIVUP}" mkdir --verbose "${LICENSE_PATH}"
     "${PRIVUP}" cp --verbose "${TEMP_DIR}/${HGUI_DESK}" "${HGUI_DESK_DEST}"
 
     printf "\nInstallation process complete!\n\n"
@@ -199,9 +236,9 @@ window_float_rule() {
     mapfile -t config_files < <(grep --files-with-matches --extended-regexp --recursive "windowrule" "${HOME}/.config/hypr/")
     hyprland_version="$(hyprland --version | awk 'NR==1 {print $2}' | cut --delimiter="." --fields=2 | tr --delete "\n")"
     if [[ "${hyprland_version}" -gt 47 ]]; then
-        window_rule="windowrule = float, title:^(.*Hyprshot.*)$"
+        window_rule="windowrule = float, title:^(.*Hyprshot.*)$" # in line with Hyprland versions above 0.47.2
     else
-        window_rule="windowrulev2 = float, title:^(.*Hyprshot.*)$"
+        window_rule="windowrulev2 = float, title:^(.*Hyprshot.*)$" # in line with Hyprland versions above 0.47.2
     fi
     key_line="# HyprShot GUI floating"
     if [[ ${#config_files[@]} -ne 1 ]]; then

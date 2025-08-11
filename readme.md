@@ -102,11 +102,15 @@ hyprshot-gui -o ~/Screenshots -d 3 --clipboard-only
 
 ## Additional Configuration  
 To enhance the user experience, you can configure Hyprland to launch the application in floating mode by adding the following window rule to your Hyprland configuration:  
-
+For Hyprland until 0.47.2
 ```bash
 windowrulev2 = float, title:^(.*Hyprshot.*)$
-```  
-- **Note:** This rule is automatically added to your `~/.config/hypr/hyprland.conf` by the install script, so you don’t need to add it manually unless you want to verify or modify it.
+```
+From Hyprland from 0.48.0
+```bash
+windowrule = float, title:^(.*Hyprshot.*)$
+```
+- **Note:** The Install script tries to add this rule is automatically if it finds only one file containing window rules like `~/.config/hypr/hyprland.conf` or a modular approach `~/.config/hypr/conf/rules.conf`. Finding more than one file with window rules, it won't try to add the rule.
 
 ## Contributing
 If you'd like to contribute, feel free to submit pull requests or report issues.

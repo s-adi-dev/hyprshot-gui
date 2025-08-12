@@ -90,6 +90,7 @@ class ConfigManager:
         try:
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             config = configparser.ConfigParser()
+            config.optionxform = str  # Preserve case for keys
             config["Settings"] = self.default_settings.to_dict()
             with open(self.config_path, "w") as config_file:
                 config.write(config_file)

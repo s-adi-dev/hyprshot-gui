@@ -90,6 +90,7 @@ class ConfigManager:
         try:
             os.makedirs(os.path.dirname(self.config_path), exist_ok=True)
             config = configparser.ConfigParser()
+            config.optionxform = str  # Preserve case for keys
             config["Settings"] = self.default_settings.to_dict()
             with open(self.config_path, "w") as config_file:
                 config.write(config_file)
@@ -100,19 +101,19 @@ class ConfigManager:
         """Validates settings from config file."""
         return AppSettings(
             output_dir=os.path.expanduser(
-                settings_dict.get("OutputDir", self.default_settings.output_dir)
+                settings_dict.get("outputdir", self.default_settings.output_dir)
             ),
             delay=self._validate_int(
-                settings_dict.get("Delay"), self.default_settings.delay
+                settings_dict.get("delay"), self.default_settings.delay
             ),
             notify_timeout=self._validate_int(
-                settings_dict.get("NotifyTimeout"), self.default_settings.notify_timeout
+                settings_dict.get("notifytimeout"), self.default_settings.notify_timeout
             ),
             clipboard_only=self._validate_bool(
-                settings_dict.get("ClipboardOnly", str(self.default_settings.clipboard_only))
+                settings_dict.get("clipboardonly", str(self.default_settings.clipboard_only))
             ),
             silent=self._validate_bool(
-                settings_dict.get("Silent", str(self.default_settings.silent))
+                settings_dict.get("silent", str(self.default_settings.silent))
             ),
         )
     

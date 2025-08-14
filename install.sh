@@ -1,228 +1,244 @@
 #!/usr/bin/env bash
-#{{{ Bash settings
-set -o errexit
-set -o nounset
-set -o pipefail
-set -o errtrace
-#}}}
-#######################################
-# Runs everything
-#######################################
-main() {
 
-    # Sets which priviledges elevator to use
-    if [[ "${USER}" != root ]]; then
-        # checks if doas is installed and use it as default
-        command -v doas >/dev/null && PRIVUP="doas" || PRIVUP="sudo"
-    fi
+# Hyprshot GUI Installer - Simplified and maintainable version
+# Exit on any error
+set -euo pipefail
 
-    local HGUI_REMOTE
-    local HGUI_EXEC
-    local HGUI_DESK
-    local HGUI_DEST
-    local REMOTE_EXEC
-    local REMOTE_DESK
-    local HGUI_CONF
-    local H_EXEC
-    local H_DEST
-    local HYPRSHOT_URL
-    local TEMP_DIR
+# Configuration
+readonly BASE_URL="https://raw.githubusercontent.com"
+readonly HYPRSHOT_URL="${BASE_URL}/gustash/hyprshot/refs/heads/main/hyprshot"
+readonly HGUI_BASE="${BASE_URL}/s-adi-dev/hyprshot-gui/refs/heads/main/src"
+readonly HGUI_EXEC_URL="${HGUI_BASE}/hyprshot-gui"
+readonly HGUI_DESKTOP_URL="${HGUI_BASE}/hyprshot.desktop"
 
-    BASE_URL="https://raw.githubusercontent.com"
-    HGUI_REMOTE="${BASE_URL}/s-adi-dev/hyprshot-gui/refs/heads/main/src"
-    HGUI_EXEC="hyprshot-gui"
-    HGUI_DESK="hyprshot.desktop"
-    HGUI_DEST="/usr/bin/${HGUI_EXEC}"
-    HGUI_DESK_DEST="/usr/share/applications/${HGUI_DESK}"
-    HGUI_CONF="${HOME}/.config/hypr/hyprshot.conf"
-    REMOTE_EXEC="${HGUI_REMOTE}/${HGUI_EXEC}"
-    REMOTE_DESK="${HGUI_REMOTE}/${HGUI_DESK}"
-    H_EXEC="hyprshot"
-    H_DEST="/usr/bin/${H_EXEC}"
-    HYPRSHOT_URL="${BASE_URL}/gustash/hyprshot/refs/heads/main/${H_EXEC}"
-    TEMP_DIR="$(mktemp --directory --suffix -HYPRSHOT-GUI)"
+readonly INSTALL_DIR="/usr/bin"
+readonly DESKTOP_DIR="/usr/share/applications"
+readonly CONFIG_FILE="${HOME}/.config/hypr/hyprshot.conf"
 
-    super_user_check
-    hyprshot_requirements "$(which_distro_is_this)"
-    hyprshot_obtain_raw
-    hyprshot_installation "${@}"
-    hyprshot_defaults "${@}"
-    window_float_rule
+# Colors for output
+readonly RED='\033[0;31m'
+readonly GREEN='\033[0;32m'
+readonly YELLOW='\033[1;33m'
+readonly NC='\033[0m' # No Color
 
-}
-#######################################
-# Detects which distro is running
-# Not all distro comes with lsb_release installed
-#######################################
-which_distro_is_this() {
+# Logging functions
+log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
+log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-    local -a os_release_file
-    local -A distro_info
-    os_release_file=""
-    # sets which release file to use
-    [[ -e /etc/os-release ]] && os_release_file='/etc/os-release' || os_release_file='/usr/lib/os-release'
-    # returns fedora,debian,cachyos etc
-    short="$(sed --sandbox --silent --regexp-extended 's#^ID=(.*)$#\1#p' "${os_release_file}" | xargs)"
-    # returns Fedora Linux, Debian GNU/Linux, CachyOS Linux etc
-    name="$(sed --sandbox --silent --regexp-extended 's#^NAME=(.*)$#\1#p' "${os_release_file}" | xargs)"
-    distro_info=(
-        [${short}]=${name}
-    )
-
-    printf "%s\n%s\n" "${!distro_info[*]}" "${distro_info[${short}]}"
-
-}
-#######################################
-# Based on which_distro_is_this return installs the dependencies
-#######################################
-hyprshot_requirements() {
-
-    local -a distro_info
-    local short
-    local long
-
-    readarray -t distro_info < <(which_distro_is_this)
-    short="${distro_info[0]}"
-    long="${distro_info[1]}"
-
-    printf "Detected ID %s or a %s based OS: %s\n" "${short}" "${short}" "${long}"
-    printf "Installing dependencies for %s...\n\n" "${long}"
-
-    case "${short}" in
-    arch | cachyos)
-        "${PRIVUP}" pacman --sync --needed git gtk4 python-gobject curl
-        ;;
-    fedora | nobara)
-        "${PRIVUP}" dnf --assumeyes install git gtk4 python3-gobject curl
-        ;;
-    suse | opensuse)
-        "${PRIVUP}" zypper --no-confirm install git curl python3-gobject
-        ;;
-    ubuntu | mint | pop)
-        "${PRIVUP}" apt --assume-yes install git curl python3-gobject
-        ;;
-    *)
-        printf "%s (%s) is not on the list\n" "${long}" "${short}"
-        ;;
-    esac
-
-}
-#######################################
-# Checks if priviledges where elevated and exits if true
-#######################################
-super_user_check() {
-    local user_id
-    local user_name
-
-    user_id="$(id --user --real)"
-    user_name="$(id --user --name)"
-
-    if [[ "${user_id}" -eq 0 ]]; then
-        printf "This script is not intended to be used with elevated privileges (%s). Exiting." "${user_name}"
+# Check if running as root
+check_not_root() {
+    if [[ $EUID -eq 0 ]]; then
+        log_error "This script should not be run as root"
         exit 1
     fi
 }
-#######################################
-# Generates the configuration file with its defaults
-#######################################
-hyprshot_defaults() {
 
-    local configuration_defaults
-    configuration_defaults="[Settings]
-OutputDir = ${XDG_PICTURES_DIR}
+# Detect privilege escalation command
+detect_privup() {
+    if command -v doas >/dev/null 2>&1; then
+        echo "doas"
+    elif command -v sudo >/dev/null 2>&1; then
+        echo "sudo"
+    else
+        log_error "Neither doas nor sudo found. Please install one of them."
+        exit 1
+    fi
+}
+
+# Detect distribution
+detect_distro() {
+    local os_release_file="/etc/os-release"
+    [[ ! -f "$os_release_file" ]] && os_release_file="/usr/lib/os-release"
+    
+    if [[ -f "$os_release_file" ]]; then
+        grep -E "^ID=" "$os_release_file" | cut -d'=' -f2 | tr -d '"'
+    else
+        log_error "Cannot detect distribution"
+        exit 1
+    fi
+}
+
+# Install dependencies based on distribution
+install_dependencies() {
+    local distro="$1"
+    local privup="$2"
+    
+    log_info "Installing dependencies for $distro..."
+    
+    case "$distro" in
+        arch|cachyos|manjaro|endeavouros)
+            $privup pacman -S --needed --noconfirm git gtk4 python-gobject curl
+            ;;
+        fedora|nobara)
+            $privup dnf install -y git gtk4 python3-gobject curl
+            ;;
+        opensuse*|suse)
+            $privup zypper install -y git gtk4-devel python3-gobject curl
+            ;;
+        ubuntu|debian|mint|pop|linuxmint)
+            $privup apt update && $privup apt install -y git libgtk-4-1 python3-gi curl
+            ;;
+        *)
+            log_warn "Unsupported distribution: $distro"
+            log_warn "Please install manually: git, gtk4, python3-gobject, curl"
+            read -p "Continue anyway? [y/N] " -n 1 -r
+            echo
+            [[ ! $REPLY =~ ^[Yy]$ ]] && exit 1
+            ;;
+    esac
+}
+
+# Download file with error handling
+download_file() {
+    local url="$1"
+    local output="$2"
+    local name="$3"
+    
+    log_info "Downloading $name..."
+    if ! curl -fsSL --progress-bar "$url" -o "$output"; then
+        log_error "Failed to download $name from $url"
+        exit 1
+    fi
+}
+
+# Install files
+install_files() {
+    local privup="$1"
+    local temp_dir="$2"
+    
+    # Install hyprshot
+    log_info "Installing hyprshot..."
+    $privup install -m 755 "$temp_dir/hyprshot" "$INSTALL_DIR/hyprshot"
+    
+    # Install hyprshot-gui
+    log_info "Installing hyprshot-gui..."
+    $privup install -m 755 "$temp_dir/hyprshot-gui" "$INSTALL_DIR/hyprshot-gui"
+    
+    # Install desktop file
+    log_info "Installing desktop file..."
+    $privup mkdir -p "$DESKTOP_DIR"
+    $privup cp "$temp_dir/hyprshot.desktop" "$DESKTOP_DIR/hyprshot.desktop"
+}
+
+# Create default configuration
+create_config() {
+    if [[ -f "$CONFIG_FILE" ]]; then
+        log_info "Configuration file already exists: $CONFIG_FILE"
+        return
+    fi
+    
+    log_info "Creating default configuration..."
+    mkdir -p "$(dirname "$CONFIG_FILE")"
+    
+    cat > "$CONFIG_FILE" << 'EOF'
+[Settings]
+OutputDir = ${XDG_PICTURES_DIR:-$HOME/Pictures}
 Delay = 0
 NotifyTimeout = 5000
 ClipboardOnly = False
-Freeze = False
 Silent = False
-"
+EOF
+}
 
-    if [[ ! -s "${HGUI_CONF}" ]]; then
-        printf "Creating the config %s...\n" "${HGUI_CONF}"
-        printf "%b" "${configuration_defaults}" | tee -p --ignore-interrupts "${HGUI_CONF}"
+# Add Hyprland window rule
+add_window_rule() {
+    local hypr_config_dir="${HOME}/.config/hypr"
+    local config_files=()
+    
+    # Find config files with window rules
+    if [[ -d "$hypr_config_dir" ]]; then
+        while IFS= read -r -d '' file; do
+            config_files+=("$file")
+        done < <(find "$hypr_config_dir" -name "*.conf" -type f -exec grep -l "windowrule" {} \; -print0 2>/dev/null)
+    fi
+    
+    local rule="windowrulev2 = float, title:^(.*Hyprshot.*)$"
+    local comment="# HyprShot GUI floating rule"
+    
+    if [[ ${#config_files[@]} -eq 0 ]]; then
+        log_warn "No Hyprland config files found with window rules"
+        log_info "Please add this rule to your Hyprland config:"
+        echo -e "\n$comment\n$rule\n"
+        return
+    fi
+    
+    if [[ ${#config_files[@]} -gt 1 ]]; then
+        log_warn "Multiple config files found with window rules:"
+        printf '%s\n' "${config_files[@]}"
+        log_info "Please add this rule manually to the appropriate file:"
+        echo -e "\n$comment\n$rule\n"
+        return
+    fi
+    
+    local config_file="${config_files[0]}"
+    
+    # Check if rule already exists
+    if grep -Fq "$rule" "$config_file"; then
+        log_info "Window rule already exists in $config_file"
+        return
+    fi
+    
+    # Backup and add rule
+    log_info "Adding window rule to $config_file"
+    cp "$config_file" "${config_file}.backup.$(date +%Y%m%d_%H%M%S)"
+    echo -e "\n$comment\n$rule" >> "$config_file"
+}
+
+# Cleanup function
+cleanup() {
+    if [[ -n "${temp_dir:-}" ]] && [[ -d "$temp_dir" ]]; then
+        rm -rf "$temp_dir"
     fi
 }
-#######################################
-# Directly downloads hyprshot, hyprshot-gui and its desktop file to a temporary folder
-#######################################
-hyprshot_obtain_raw() {
 
-    local -A wanted
-    local -ga DOWNLOADED
-
-    wanted=(
-        [${H_EXEC}]=${HYPRSHOT_URL}
-        [${HGUI_EXEC}]=${REMOTE_EXEC}
-        [${HGUI_DESK}]=${REMOTE_DESK}
-    )
-
-    for w in "${!wanted[@]}"; do
-        printf "\nObtaining %s \n\tfrom %s...\n" "${w}" "${wanted[${w}]}"
-        curl --silent --location --progress-bar --continue-at - "${wanted[${w}]}" --output "${TEMP_DIR}/${w}"
-        DOWNLOADED+=("${TEMP_DIR}/${w}")
-    done
-
-}
-#######################################
-# Installs downloaded files
-#######################################
-hyprshot_installation() {
-
-    # local hyprshot_ver
-    # local hyprshotgui_ver
-    # hyprshot_ver="$(hyprshot --version)"
-    # hyprshotgui_ver="$(hyprshot-gui --version)"
-
-    printf "\nInstalling Hyprshot... (%s)\n" "${H_EXEC}"
-    "${PRIVUP}" install --verbose --compare --mode 755 "${TEMP_DIR}/${H_EXEC}" "${H_DEST}"
-
-    printf "\nInstalling HyprShot GUI... (%s)\n" "${HGUI_EXEC}"
-    "${PRIVUP}" install --verbose --compare --mode 755 "${TEMP_DIR}/${HGUI_EXEC}" "${HGUI_DEST}"
-
-    printf "\nCopying HyprShot GUI desktop file... (%s)\n" "${HGUI_DESK}"
-    "${PRIVUP}" cp --verbose "${TEMP_DIR}/${HGUI_DESK}" "${HGUI_DESK_DEST}"
-
-    printf "\nInstallation process complete!\n\n"
-}
-#######################################
-# Checks if there is the window rule to float HyprShot GUI window, adds it if it doesn't.
-# Backs up the configuration file in the process
-#######################################
-window_float_rule() {
-
-    local -a config_files
-    local rule_file
-    local window_rule
-    local which_line
-    local hyprland_version
-
-    mapfile -t config_files < <(grep --files-with-matches --extended-regexp --recursive "windowrule" "${HOME}/.config/hypr/")
-    hyprland_version="$(hyprland --version | awk 'NR==1 {print $2}' | cut --delimiter="." --fields=2 | tr --delete "\n")"
-    if [[ "${hyprland_version}" -gt 47 ]]; then
-        window_rule="windowrule = float, title:^(.*Hyprshot.*)$"
-    else
-        window_rule="windowrulev2 = float, title:^(.*Hyprshot.*)$"
+# Main installation function
+main() {
+    log_info "Starting Hyprshot GUI installation..."
+    
+    # Setup cleanup trap
+    trap cleanup EXIT
+    
+    # Pre-flight checks
+    check_not_root
+    
+    # Detect system
+    local privup distro temp_dir
+    privup=$(detect_privup)
+    distro=$(detect_distro)
+    temp_dir=$(mktemp -d -t hyprshot-gui-XXXXXX)
+    
+    log_info "Detected distribution: $distro"
+    log_info "Using privilege escalation: $privup"
+    
+    # Install dependencies
+    install_dependencies "$distro" "$privup"
+    
+    # Download files
+    download_file "$HYPRSHOT_URL" "$temp_dir/hyprshot" "hyprshot"
+    download_file "$HGUI_EXEC_URL" "$temp_dir/hyprshot-gui" "hyprshot-gui"
+    download_file "$HGUI_DESKTOP_URL" "$temp_dir/hyprshot.desktop" "desktop file"
+    
+    # Make executables
+    chmod +x "$temp_dir/hyprshot" "$temp_dir/hyprshot-gui"
+    
+    # Install files
+    install_files "$privup" "$temp_dir"
+    
+    # Create configuration
+    create_config
+    
+    # Add window rule
+    add_window_rule
+    
+    log_info "Installation completed successfully!"
+    log_info "You can now run 'hyprshot-gui' or find it in your applications menu"
+    
+    # Check if in PATH
+    if ! command -v hyprshot-gui >/dev/null 2>&1; then
+        log_warn "hyprshot-gui not found in PATH. You may need to restart your session."
     fi
-    key_line="# HyprShot GUI floating"
-    if [[ ${#config_files[@]} -ne 1 ]]; then
-        printf "%s\n" "Can't figure out which file holds your windows rules."
-        printf "\t%b\n" "${config_files[*]}"
-        printf "%b\n%b" "${key_line}" "${window_rule}" | wl-copy
-        printf "Paste this inside your window rules file [already copied to memory]: \n\t%b\n\t%b\n" "${key_line}" "${window_rule}"
-        exit 1
-    elif [[ ${#config_files[@]} -eq 1 ]]; then
-        rule_file="${config_files[0]}"
-    fi
-    which_line="$(grep --fixed-string --line-number "${window_rule}" "${rule_file[0]}" | cut --delimiter=":" --fields=1)"
-
-    if grep --extended-regexp --only-matching "${window_rule}" "${rule_file[0]}"; then
-        printf "It looks like %s already has the configuration at line %s." "${rule_file}" "${which_line}"
-    else
-        printf "Backing up %s\n" "${rule_file[0]}"
-        cp --verbose "${rule_file[0]}"{,.HYPRSHOTGUI}
-        printf "Appending window rule to the end of %s\n" "${rule_file[0]}"
-        printf "\n%s\n%s\n" "${key_line}" "${window_rule}" | tee --append --ignore-interrupts -p "${rule_file[0]}"
-    fi
-
 }
-main "${@}"
+
+# Run main function with all arguments
+main "$@"

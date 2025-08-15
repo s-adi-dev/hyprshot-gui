@@ -25,6 +25,7 @@ Options:
   -v, --version             Show version information and exit.
 
   -o, --output-folder       directory in which to save screenshot 
+  -z, --freeze              freeze the screen on initialization
   -d, --delay               time delay in taking screenshot
   --clipboard-only          Save only to clipboard
 
@@ -48,6 +49,7 @@ class AppSettings:
     delay: int = 0
     notify_timeout: int = 5000
     clipboard_only: bool = False
+    freeze: bool = False
     silent: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
@@ -57,6 +59,7 @@ class AppSettings:
             "Delay": str(self.delay),
             "NotifyTimeout": str(self.notify_timeout),
             "ClipboardOnly": str(self.clipboard_only),
+            "Freeze": str(self.freeze),
             "Silent": str(self.silent),
         }
 
@@ -112,6 +115,9 @@ class ConfigManager:
             clipboard_only=self._validate_bool(
                 settings_dict.get("clipboardonly", str(self.default_settings.clipboard_only))
             ),
+            freeze=self._validate_bool(
+                settings_dict.get("freeze", str(self.default_settings.freeze))
+            ),
             silent=self._validate_bool(
                 settings_dict.get("silent", str(self.default_settings.silent))
             ),
@@ -151,6 +157,7 @@ class ArgumentParser:
         parser.add_argument("-d", "--delay", type=self._check_positive_int)
         parser.add_argument("-t", "--notify-timeout", type=self._check_positive_int)
         parser.add_argument("--clipboard-only", action="store_true")
+        parser.add_argument("-z", "--freeze", action="store_true")
         parser.add_argument("-s", "--silent", action="store_true")
         parser.add_argument("-v", "--version", action="store_true")
         parser.add_argument("-h", "--help", action="store_true")
@@ -200,6 +207,9 @@ class ArgumentParser:
         if args.silent:
             settings.silent = True
         
+        if args.freeze:
+            settings.freeze = True
+        
         if args.clipboard_only:
             settings.clipboard_only = True
         
@@ -219,6 +229,9 @@ class ScreenshotRunner:
         
         if clipboard_only:
             cmd.append("--clipboard-only")
+        
+        if self.settings.freeze:
+            cmd.append("--freeze")
         
         if self.settings.silent:
             cmd.append("--silent")
@@ -493,16 +506,16 @@ class ScreenshotApp(Gtk.ApplicationWindow):
     def _run_screenshot(self, mode: str):
         """Runs the screenshot command with proper window hiding."""
         try:
+            # Hide window and execute screenshot
+            self.set_visible(False)
+
             cmd = self.screenshot_runner.build_command(
                 mode,
                 self.current_output_dir,
                 self.clipboard_toggle.get_active(),
                 self.current_delay
             )
-            
-            # Hide window and execute screenshot
-            self.set_visible(False)
-            
+                        
             if self.current_delay > 0:
                 GLib.timeout_add_seconds(
                     self.current_delay, self._execute_screenshot, cmd
